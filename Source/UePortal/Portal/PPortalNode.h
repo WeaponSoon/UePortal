@@ -14,12 +14,21 @@ class UEPORTAL_API UPPortalNode : public UObject
 {
 	GENERATED_BODY()
 	
-private:
+public:
 	UPROPERTY()
 		class UTextureRenderTarget2D* renderTexture;
 	UPROPERTY()
 		TArray<UPPortalNode*> childrenNode;
+	UPROPERTY()
+		FVector clipPlanePos;
+	UPROPERTY()
+		FVector clipPlaneNormal;
+	UPROPERTY()
+		FTransform cameraTran;
 	class UPPortalTree* motherTree;
+
+	UPROPERTY()
+		class UPortalDoorComponent* portalDoor;
 public:
 	void SetRenderTexture(const UTextureRenderTarget2D* renderTarget2D);
 	UTextureRenderTarget2D* GetRenderTexture();

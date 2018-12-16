@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "PPortalTree.generated.h"
 
 /**
@@ -23,10 +24,14 @@ private:
 		TArray<UPPortalNode*> nodePoolMid;
 	UPROPERTY()
 		TArray<UPPortalNode*> nodePoolLow;
-	
+	UPROPERTY()
+		USceneCaptureComponent2D* rootCamera;
 public:
 	UPPortalNode* QureyPortalNode(int32 layer);
-
+	void InitPortalTree(const USceneCaptureComponent2D* root);
+	void BuildPortalTree();
+	void RenderPortalTree();
 private:
+	void BuildPortalTreeInternal(UPPortalNode* node);
 	UPPortalNode* QureyPortalNodeInternal(TArray<UPPortalNode*>& pool, int32 layer);
 };
