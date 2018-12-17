@@ -16,7 +16,8 @@ class UEPORTAL_API UPortalDoorComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UPortalDoorComponent();
-
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
+		class UMaterial* originMat;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
 		bool bIsDoorOpenSelf;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
@@ -52,4 +53,8 @@ public:
 		bool bIsDoorOpen() const;
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
 		bool ShouldRender(USceneCaptureComponent2D* capture, FBox lastBox) const;
+	UFUNCTION(BlueprintCallable, Category = "Portal Component")
+		void InstanceMaterial();
+	UFUNCTION(BlueprintGetter, Category = "Portal Component")
+		int GetNowNowPortalDoorNum();
 };

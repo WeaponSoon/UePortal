@@ -50,7 +50,7 @@ UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool,
 		UPPortalNode* tempPtr = NewObject<UPPortalNode>();
 		UTextureRenderTarget2D* temTxt = NewObject<UTextureRenderTarget2D>();
 		temTxt->RenderTargetFormat = ETextureRenderTargetFormat::RTF_RGBA8;
-		FIntPoint reslution = GetWorld()->GetGameViewport()->Viewport->GetSizeXY();
+		FIntPoint reslution = GEngine->GameViewport->Viewport->GetSizeXY();
 		float ratio = FMath::Sqrt(layer + 1);
 		temTxt->InitAutoFormat(reslution.X / ratio, reslution.Y / ratio);
 		temTxt->UpdateResourceImmediate(true);
@@ -73,6 +73,7 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root)
 
 void UPPortalTree::BuildPortalTree()
 {
+	rootNode->RecycleChildren();
 	BuildPortalTreeInternal(rootNode, 0);
 	
 }
@@ -96,7 +97,10 @@ void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node, int layer)
 	for (int i = 0; i < UPortalDoorComponent::GetAllPortals().Num(); ++i)
 	{
 		auto nextPortalDoor = UPortalDoorComponent::GetAllPortals()[i];
-		if (nextPortalDoor->ShouldRender(curCam, lastBox))
+		bool isOther = false;
+		if (node->portalDoor != nullptr)
+			isOther = (node->portalDoor->GetOtherDoor() == nextPortalDoor);
+		if (!isOther && nextPortalDoor->ShouldRender(curCam, lastBox))
 		{
 			auto nextNode = QureyPortalNode(layer-1);
 			nextNode->portalDoor = nextPortalDoor;
@@ -152,7 +156,47 @@ void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node, int layer)
 
 }
 
+
 void UPPortalTree::RenderPortalTree()
 {
-
+	RenderPortalTreeInternal(rootNode);
+}
+void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
+{
+	for (int i = 0; i < node->childrenNode.Num(); ++i)
+	{
+		RenderPortalTreeInternal(node->childrenNode[i]);
+	}
+	if (node->portalDoor == nullptr)
+	{
+		for (int i = 0; i < node->childrenNode.Num(); ++i)
+		{
+			if (node->childrenNode[i]->portalDoor->doorShowSelf->GetClass()->IsChildOf<UMeshComponent>())
+			{
+				auto mesh = Cast<UMeshComponent>(node->childrenNode[i]->portalDoor->doorShowSelf);
+				auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
+				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
+			}
+		}
+		rootCamera->CaptureScene();
+	}
+	else
+	{
+		node->portalDoor->doorCamera->SetWorldLocation(node->cameraTran.GetLocation());
+		node->portalDoor->doorCamera->SetWorldRotation(node->cameraTran.GetRotation());
+		node->portalDoor->doorCamera->bEnableClipPlane = true;
+		node->portalDoor->doorCamera->ClipPlaneBase = node->clipPlanePos;
+		node->portalDoor->doorCamera->ClipPlaneNormal = node->clipPlaneNormal;
+		node->portalDoor->doorCamera->TextureTarget = node->renderTexture;
+		for (int i = 0; i < node->childrenNode.Num(); ++i)
+		{
+			if (node->childrenNode[i]->portalDoor->doorShowSelf->GetClass()->IsChildOf<UMeshComponent>())
+			{
+				auto mesh = Cast<UMeshComponent>(node->childrenNode[i]->portalDoor->doorShowSelf);
+				auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
+				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
+			}
+		}
+		node->portalDoor->doorCamera->CaptureScene();
+	}
 }

@@ -43,8 +43,12 @@ void UPPortalComponent::BeginPlay()
 void UPPortalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	portalTree->BuildPortalTree();
-	portalTree->RenderPortalTree();
+	if (portalTree != nullptr)
+	{
+		portalTree->BuildPortalTree();
+		portalTree->RenderPortalTree();
+	}
+	
 	// ...
 }
 

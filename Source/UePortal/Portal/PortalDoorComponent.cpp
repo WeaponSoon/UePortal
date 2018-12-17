@@ -3,6 +3,9 @@
 #include "PortalDoorComponent.h"
 #include "Engine/Public/SceneView.h"
 #include "Engine//LocalPlayer.h"
+#include "Materials/Material.h"
+#include "Components/PrimitiveComponent.h"
+#include "Engine.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 
@@ -82,6 +85,7 @@ bool UPortalDoorComponent::bIsDoorOpen() const
 
 bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox lastBox) const
 {
+	return bIsDoorOpen();
 	if (bIsDoorOpen())
 	{
 		FBox myBox = GetSceneComponentScreenBox(this->doorShowSelf, capture);
@@ -90,6 +94,22 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane;
 	}
 	return false;
+}
+
+void UPortalDoorComponent::InstanceMaterial()
+{
+	if (doorShowSelf != nullptr && doorShowSelf->GetClass()->IsChildOf<UPrimitiveComponent>())
+	{
+		if (originMat != nullptr)
+		{
+			Cast<UPrimitiveComponent>(doorShowSelf)->CreateDynamicMaterialInstance(0, originMat);
+		}
+	}
+}
+
+int UPortalDoorComponent::GetNowNowPortalDoorNum()
+{
+	return portals.Num();
 }
 
 void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix)
@@ -172,7 +192,7 @@ FVector UPortalDoorComponent::ProjectWorldToScreen(const FVector & worldPos, con
 FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sceneCom, USceneCaptureComponent2D * capture)
 {
 	FMatrix res;
-	BuildProjectionMatrix(FIntPoint(capture->TextureTarget->GetSurfaceWidth(), capture->TextureTarget->GetSurfaceHeight()),
+	BuildProjectionMatrix(GEngine->GameViewport->Viewport->GetSizeXY(),
 		capture->ProjectionType,
 		capture->FOVAngle * (float)PI / 360.0f, capture->OrthoWidth, res);
 	auto selfBounds = sceneCom->CalcBounds(sceneCom->GetComponentTransform().GetRelativeTransform(capture->GetComponentTransform()));
@@ -194,6 +214,8 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 			point[i].X = GNearClippingPlane / 2;
 		}
 		screenPoint[i] = ProjectWorldToScreen(point[i], res, true);
+		if (GEngine->GetWorld() != nullptr)
+			DrawDebugPoint(GEngine->GetWorld(), capture->GetComponentTransform().TransformPosition(point[i]), 100, FColor::Red);
 	}
 
 	float xMin = screenPoint[0].X;

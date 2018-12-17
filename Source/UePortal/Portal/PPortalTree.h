@@ -38,5 +38,6 @@ public:
 	void RenderPortalTree();
 private:
 	void BuildPortalTreeInternal(UPPortalNode* node, int layer);
+	void RenderPortalTreeInternal(UPPortalNode* node);
 	UPPortalNode* QureyPortalNodeInternal(TArray<UPPortalNode*>& pool, int32 layer);
 };
