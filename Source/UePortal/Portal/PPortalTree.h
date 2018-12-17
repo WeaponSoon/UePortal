@@ -27,11 +27,16 @@ private:
 	UPROPERTY()
 		USceneCaptureComponent2D* rootCamera;
 public:
+
+	UPROPERTY()
+		int32 maxLayer;
+
 	UPPortalNode* QureyPortalNode(int32 layer);
+	void RecyclePortalNode(UPPortalNode* node);
 	void InitPortalTree(const USceneCaptureComponent2D* root);
 	void BuildPortalTree();
 	void RenderPortalTree();
 private:
-	void BuildPortalTreeInternal(UPPortalNode* node);
+	void BuildPortalTreeInternal(UPPortalNode* node, int layer);
 	UPPortalNode* QureyPortalNodeInternal(TArray<UPPortalNode*>& pool, int32 layer);
 };

@@ -13,18 +13,27 @@ UPPortalComponent::UPPortalComponent()
 }
 
 
-void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture)
+void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, int32 maxLayer)
 {
+	if (portalTree != nullptr)
+	{
+		portalTree = nullptr;
+	}
 	rootCapture = const_cast<USceneCaptureComponent2D*>(capture);
 	portalTree = NewObject<UPPortalTree>();
 	portalTree->InitPortalTree(rootCapture);
+	portalTree->maxLayer = maxLayer;
 }
 
 // Called when the game starts
 void UPPortalComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (portalTree != nullptr && rootCapture != nullptr)
+	{
+		portalTree->BuildPortalTree();
+		portalTree->RenderPortalTree();
+	}
 	// ...
 	
 }

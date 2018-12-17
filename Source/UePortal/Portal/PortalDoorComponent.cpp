@@ -7,7 +7,7 @@
 
 
 // Sets default values for this component's properties
-UPortalDoorComponent::UPortalDoorComponent()
+UPortalDoorComponent::UPortalDoorComponent() : otherDoor(nullptr), doorCamera(nullptr), doorShowSelf(nullptr), bIsDoorOpenSelf(false)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -43,6 +43,7 @@ void UPortalDoorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (portals.Contains(this))
 	{
 		portals.Remove(this);
+		SetOtherDoor(nullptr);
 	}
 	Super::EndPlay(EndPlayReason);
 }
@@ -86,7 +87,7 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 		FBox myBox = GetSceneComponentScreenBox(this->doorShowSelf, capture);
 		FBox2D myRect(FVector2D(myBox.Min.X, myBox.Min.Y), FVector2D(myBox.Max.X, myBox.Max.Y));
 		FBox2D lastRect(FVector2D(lastBox.Min.X, lastBox.Min.Y), FVector2D(lastBox.Max.X, lastBox.Max.Y));
-		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z;
+		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane;
 	}
 	return false;
 }
@@ -142,9 +143,14 @@ void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECa
 	}
 }
 
-FVector UPortalDoorComponent::ProjectWorldToScreen(const FVector & worldPos, const FMatrix & projMatrix)
+FVector UPortalDoorComponent::ProjectWorldToScreen(const FVector & worldPos, const FMatrix & projMatrix, bool bKeepZ)
 {
-	FPlane Result = projMatrix.TransformFVector4(FVector4(worldPos, 1.f));
+	FPlane posInViewSpace = FMatrix(
+		FPlane(0, 0, 1, 0),
+		FPlane(1, 0, 0, 0),
+		FPlane(0, 1, 0, 0),
+		FPlane(0, 0, 0, 1)).TransformFVector4(FVector4(worldPos, 1.f));
+	FPlane Result = projMatrix.TransformFVector4(posInViewSpace);
 
 	if (FMath::Abs(Result.W) > 0.0003f)
 	{
@@ -154,7 +160,8 @@ FVector UPortalDoorComponent::ProjectWorldToScreen(const FVector & worldPos, con
 		// Move from projection space to normalized 0..1 UI space
 		/*const float NormalizedX = (PosInScreenSpace.X / 2.f) + 0.5f;
 		const float NormalizedY = 1.f - (PosInScreenSpace.Y / 2.f) - 0.5f;*/
-		return FVector(PosInScreenSpace.X, PosInScreenSpace.Y, PosInScreenSpace.Z);
+		FVector ret(PosInScreenSpace.X, PosInScreenSpace.Y, bKeepZ ? worldPos.Z : PosInScreenSpace.Z);
+		return ret;
 	}
 	// the result of this will be x and y coords in -1..1 projection space
 	
@@ -182,7 +189,11 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 	FVector screenPoint[8];
 	for (int i = 0; i < 8; ++i)
 	{
-		screenPoint[i] = ProjectWorldToScreen(point[i], res);
+		if (point[i].X < GNearClippingPlane / 2)
+		{
+			point[i].X = GNearClippingPlane / 2;
+		}
+		screenPoint[i] = ProjectWorldToScreen(point[i], res, true);
 	}
 
 	float xMin = screenPoint[0].X;

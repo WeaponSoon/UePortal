@@ -23,8 +23,11 @@ void UPPortalNode::RecycleChildren()
 	for (int32 i = 0; i < childrenNode.Num(); ++i)
 	{
 		childrenNode[i]->RecycleChildren();
-
+		childrenNode[i]->childrenNode.Reset();
+		childrenNode[i]->portalDoor = nullptr;
+		motherTree->RecyclePortalNode(childrenNode[i]);
 	}
+
 	childrenNode.Reset();
 }
 

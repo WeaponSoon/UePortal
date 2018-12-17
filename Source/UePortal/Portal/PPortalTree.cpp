@@ -27,6 +27,22 @@ UPPortalNode*  UPPortalTree::QureyPortalNode(int32 layer)
 	return retRes;
 }
 
+void UPPortalTree::RecyclePortalNode(UPPortalNode * node)
+{
+	if (node->belongLayer <= 0)
+	{
+		nodePoolHigh.Push(node);
+	}
+	else if (node->belongLayer <= 1)
+	{
+		nodePoolMid.Push(node);
+	}
+	else
+	{
+		nodePoolLow.Push(node);
+	}
+}
+
 UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool, int32 layer)
 {
 	if (pool.Num() <= 0)
@@ -40,6 +56,8 @@ UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool,
 		temTxt->UpdateResourceImmediate(true);
 		tempPtr->SetRenderTexture(temTxt);
 		tempPtr->portalDoor = nullptr;
+		tempPtr->motherTree = this;
+		tempPtr->belongLayer = layer;
 		pool.Add(tempPtr);
 		//temTxt->InitAutoFormat()
 	}
@@ -55,12 +73,15 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root)
 
 void UPPortalTree::BuildPortalTree()
 {
-	UPPortalNode* currentSearch = rootNode;
+	BuildPortalTreeInternal(rootNode, 0);
 	
 }
 
-void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node)
+void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node, int layer)
 {
+	if (layer >= maxLayer)
+		return;
+	layer++;
 	USceneCaptureComponent2D* curCam = node->portalDoor == nullptr ? rootCamera : node->portalDoor->doorCamera;
 	if (node->portalDoor != nullptr)
 	{
@@ -77,11 +98,55 @@ void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node)
 		auto nextPortalDoor = UPortalDoorComponent::GetAllPortals()[i];
 		if (nextPortalDoor->ShouldRender(curCam, lastBox))
 		{
-			auto nextNode = QureyPortalNode(0);
+			auto nextNode = QureyPortalNode(layer-1);
 			nextNode->portalDoor = nextPortalDoor;
 			node->AddChild(nextNode);
 
 		}
+	}
+	for (int i = 0; i < node->childrenNode.Num(); ++i)
+	{
+		if (node->portalDoor != nullptr)
+		{
+			curCam->SetWorldLocation(node->cameraTran.GetLocation());
+			curCam->SetWorldRotation(node->cameraTran.GetRotation());
+			curCam->bEnableClipPlane = true;
+			curCam->ClipPlaneNormal = node->clipPlaneNormal;
+			curCam->ClipPlaneBase = node->clipPlanePos;
+		}
+		UPortalDoorComponent* childSource = node->childrenNode[i]->portalDoor;
+		UPortalDoorComponent* childDest = node->childrenNode[i]->portalDoor->GetOtherDoor();
+
+		FVector sourceLocation = childSource->doorShowSelf->GetComponentLocation();
+		FRotator sourceRotation = childSource->doorShowSelf->GetComponentRotation();
+
+		FVector destLocation = childDest->doorShowSelf->GetComponentLocation();
+		FRotator destRotation = childDest->doorShowSelf->GetComponentRotation();
+
+		FVector relativeToSourceLocInWorld = curCam->GetComponentLocation() - sourceLocation;
+		FVector relativeToSourceLocInLocal = sourceRotation.UnrotateVector(relativeToSourceLocInWorld);
+
+		FVector relativeToDestLocInLocal = FRotator(FQuat(FVector::UpVector, PI)).RotateVector(relativeToSourceLocInLocal);
+		
+		FVector childCameraLoc = destRotation.RotateVector(relativeToDestLocInLocal) + destLocation;
+	
+		FMatrix relativeToSourceRot = FRotationMatrix(curCam->GetComponentRotation()) * FRotationMatrix(sourceRotation.GetInverse());
+		
+		FMatrix relativeToDestRot = relativeToSourceRot * FRotationMatrix(FRotator(FQuat(FVector::UpVector, PI)));
+		
+		FRotator childCameraRot = (relativeToDestRot * FRotationMatrix(destRotation)).Rotator();
+		
+		
+		childSource->doorCamera->SetWorldLocation(childCameraLoc);
+		childSource->doorCamera->SetWorldRotation(childCameraRot);
+		childSource->doorCamera->bEnableClipPlane = true;
+		childSource->doorCamera->ClipPlaneBase = childSource->GetOtherDoor()->doorShowSelf->GetComponentLocation();
+		childSource->doorCamera->ClipPlaneNormal = childSource->GetOtherDoor()->doorShowSelf->GetForwardVector();
+
+		node->childrenNode[i]->cameraTran = childSource->doorCamera->GetComponentTransform();
+		node->childrenNode[i]->clipPlaneNormal = childSource->doorCamera->ClipPlaneNormal;
+		node->childrenNode[i]->clipPlanePos = childSource->doorCamera->ClipPlaneBase;
+		BuildPortalTreeInternal(node->childrenNode[i], layer);
 		
 	}
 

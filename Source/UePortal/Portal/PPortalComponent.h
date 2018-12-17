@@ -22,7 +22,7 @@ public:
 	UPROPERTY()
 		UPPortalTree* portalTree;
 	UFUNCTION(BlueprintCallable, Category="Portal Component")
-		void SetPortalTree(const USceneCaptureComponent2D* capture);
+		void SetPortalTree(const USceneCaptureComponent2D* capture, int32 maxLayer);
 
 protected:
 	// Called when the game starts

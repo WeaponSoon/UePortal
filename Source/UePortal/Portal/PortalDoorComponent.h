@@ -41,7 +41,7 @@ public:
 	static const TArray<UPortalDoorComponent*>& GetAllPortals();
 
 	static void BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix);
-	static FVector ProjectWorldToScreen(const FVector& worldPos, const FMatrix& projMatrix);
+	static FVector ProjectWorldToScreen(const FVector& worldPos, const FMatrix& projMatrix, bool bKeepZ = false);
 	static FBox GetSceneComponentScreenBox(const USceneComponent* sceneCom, USceneCaptureComponent2D* capture);
 
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")

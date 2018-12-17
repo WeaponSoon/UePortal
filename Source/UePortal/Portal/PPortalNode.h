@@ -25,6 +25,7 @@ public:
 		FVector clipPlaneNormal;
 	UPROPERTY()
 		FTransform cameraTran;
+	int belongLayer;
 	class UPPortalTree* motherTree;
 
 	UPROPERTY()
