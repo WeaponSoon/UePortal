@@ -178,7 +178,7 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
 			}
 		}
-		rootCamera->CaptureScene();
+		
 	}
 	else
 	{
