@@ -58,8 +58,31 @@ const TArray<UPortalDoorComponent*>& UPortalDoorComponent::GetAllPortals()
 	// TODO: 在此处插入 return 语句
 }
 
+void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camera, const USceneComponent * model, const UMaterial * mat, bool isOpenSelfFirst)
+{
+	doorCamera = const_cast<USceneCaptureComponent2D*>(camera);
+	doorShowSelf = const_cast<USceneComponent*>(model);
+	bIsDoorOpenSelf = isOpenSelfFirst;
+	if (doorCamera != nullptr)
+	{
+		doorCamera->bCaptureEveryFrame = false;
+	}
+
+	if (originMat != const_cast<UMaterial*>(mat))
+	{
+		originMat = const_cast<UMaterial*>(mat);
+		if (originMat != nullptr)
+		{
+			InstanceMaterial();
+		}
+	}
+}
+
 void UPortalDoorComponent::SetOtherDoor(UPortalDoorComponent * other)
 {
+	if (otherDoor == other)
+		return;
+
 	if (otherDoor != nullptr)
 	{
 		otherDoor->otherDoor = nullptr;
@@ -83,8 +106,8 @@ UPortalDoorComponent * UPortalDoorComponent::GetOtherDoor() const
 
 bool UPortalDoorComponent::bIsDoorOpen() const
 {
-	bool otherOpen = otherDoor != nullptr && otherDoor->bIsDoorOpenSelf && otherDoor->doorCamera != nullptr && otherDoor->doorShowSelf != nullptr;
-	return bIsDoorOpenSelf && otherOpen && doorCamera != nullptr && doorShowSelf != nullptr;
+	bool otherOpen = otherDoor != nullptr && otherDoor->bIsDoorOpenSelf && otherDoor->doorCamera != nullptr && otherDoor->doorShowSelf != nullptr &&otherDoor->originMat != nullptr;
+	return bIsDoorOpenSelf && otherOpen && doorCamera != nullptr && doorShowSelf != nullptr && originMat != nullptr;
 	
 }
 
@@ -116,6 +139,18 @@ void UPortalDoorComponent::InstanceMaterial()
 int UPortalDoorComponent::GetNowNowPortalDoorNum()
 {
 	return portals.Num();
+}
+
+void UPortalDoorComponent::OriginMaterial(const UMaterial * origin)
+{
+	if (originMat != origin)
+	{
+		originMat = const_cast<UMaterial*>(origin);
+		if (originMat != nullptr)
+		{
+			InstanceMaterial();
+		}
+	}
 }
 
 void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix)
@@ -220,18 +255,10 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 			point[i].X = GNearClippingPlane / 2;
 		}
 		screenPoint[i] = ProjectWorldToScreen(point[i], res, true);
-		if (GEngine->GetWorld() != nullptr)
-		{
-			if (GEngine->GetWorld()->GetFirstLocalPlayerFromController() != nullptr)
-			{
-				auto view = GEngine->GetWorld()->GetFirstLocalPlayerFromController()->ViewportClient;
-				if (view != nullptr && view->ViewportConsole != nullptr)
-				{
-					view->ViewportConsole->OutputText(selfBounds.Origin.ToString() + " " + point[i].ToString());
-				}
-			}
-		}
+		
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, sceneCom->GetOwner()->GetName() + ": " + screenPoint[i].ToString());
 	}
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, sceneCom->GetOwner()->GetName() + ": " + ProjectWorldToScreen(selfBounds.Origin,res,true).ToString());
 
 	float xMin = screenPoint[0].X;
 	float xMax = screenPoint[0].X;
@@ -261,7 +288,7 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 		{
 			yMax = screenPoint[i].Y;
 		}
-		if (screenPoint[i].Z < zMax)
+		if (screenPoint[i].Z > zMax)
 		{
 			zMax = screenPoint[i].Z;
 		}
