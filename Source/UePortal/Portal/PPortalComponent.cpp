@@ -8,6 +8,7 @@ UPPortalComponent::UPPortalComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+	SetTickGroup(ETickingGroup::TG_PostUpdateWork);
 	
 	// ...
 }
@@ -19,9 +20,12 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 	{
 		portalTree = nullptr;
 	}
+	if (capture == nullptr)
+		return;
 	rootCapture = const_cast<USceneCaptureComponent2D*>(capture);
 	portalTree = NewObject<UPPortalTree>();
 	portalTree->InitPortalTree(rootCapture);
+	rootCapture->bCaptureEveryFrame = false;
 	portalTree->maxLayer = maxLayer;
 }
 

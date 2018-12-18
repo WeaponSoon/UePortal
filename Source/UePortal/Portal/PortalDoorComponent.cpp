@@ -69,6 +69,10 @@ void UPortalDoorComponent::SetOtherDoor(UPortalDoorComponent * other)
 		other->otherDoor = this;
 	}
 	otherDoor = other;
+	if (bIsDoorOpen())
+	{
+		doorCamera->bCaptureEveryFrame = false;
+	}
 }
 
 UPortalDoorComponent * UPortalDoorComponent::GetOtherDoor() const
