@@ -5,6 +5,7 @@
 #include "Engine//LocalPlayer.h"
 #include "Materials/Material.h"
 #include "Components/PrimitiveComponent.h"
+#include "Engine/Console.h"
 #include "Engine.h"
 #include "Engine/TextureRenderTarget2D.h"
 
@@ -89,12 +90,13 @@ bool UPortalDoorComponent::bIsDoorOpen() const
 
 bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox lastBox) const
 {
-	return bIsDoorOpen();
+	
 	if (bIsDoorOpen())
 	{
 		FBox myBox = GetSceneComponentScreenBox(this->doorShowSelf, capture);
 		FBox2D myRect(FVector2D(myBox.Min.X, myBox.Min.Y), FVector2D(myBox.Max.X, myBox.Max.Y));
 		FBox2D lastRect(FVector2D(lastBox.Min.X, lastBox.Min.Y), FVector2D(lastBox.Max.X, lastBox.Max.Y));
+		//return bIsDoorOpen();
 		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane;
 	}
 	return false;
@@ -219,7 +221,16 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 		}
 		screenPoint[i] = ProjectWorldToScreen(point[i], res, true);
 		if (GEngine->GetWorld() != nullptr)
-			DrawDebugPoint(GEngine->GetWorld(), capture->GetComponentTransform().TransformPosition(point[i]), 100, FColor::Red);
+		{
+			if (GEngine->GetWorld()->GetFirstLocalPlayerFromController() != nullptr)
+			{
+				auto view = GEngine->GetWorld()->GetFirstLocalPlayerFromController()->ViewportClient;
+				if (view != nullptr && view->ViewportConsole != nullptr)
+				{
+					view->ViewportConsole->OutputText(selfBounds.Origin.ToString() + " " + point[i].ToString());
+				}
+			}
+		}
 	}
 
 	float xMin = screenPoint[0].X;
