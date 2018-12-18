@@ -120,7 +120,10 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 		FBox2D myRect(FVector2D(myBox.Min.X, myBox.Min.Y), FVector2D(myBox.Max.X, myBox.Max.Y));
 		FBox2D lastRect(FVector2D(lastBox.Min.X, lastBox.Min.Y), FVector2D(lastBox.Max.X, lastBox.Max.Y));
 		//return bIsDoorOpen();
-		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane;
+		FVector dir = doorShowSelf->GetComponentLocation() - capture->GetComponentLocation();
+		bool angleRe = FVector::DotProduct(dir, doorShowSelf->GetForwardVector()) <= 0;
+
+		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane && angleRe;
 	}
 	return false;
 }
