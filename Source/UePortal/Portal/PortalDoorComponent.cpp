@@ -259,9 +259,9 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 		}
 		screenPoint[i] = ProjectWorldToScreen(point[i], res, true);
 		
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, sceneCom->GetOwner()->GetName() + ": " + screenPoint[i].ToString());
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, sceneCom->GetOwner()->GetName() + ": " + screenPoint[i].ToString());
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, sceneCom->GetOwner()->GetName() + ": " + ProjectWorldToScreen(selfBounds.Origin,res,true).ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, sceneCom->GetOwner()->GetName() + ": " + ProjectWorldToScreen(selfBounds.Origin,res,true).ToString());
 
 	float xMin = screenPoint[0].X;
 	float xMax = screenPoint[0].X;
