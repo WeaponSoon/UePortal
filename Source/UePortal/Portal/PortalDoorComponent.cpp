@@ -9,6 +9,7 @@
 #include "Engine.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/BoxComponent.h"
+#include "Delegates/Delegate.h"
 
 const FName UPortalDoorComponent::PORTAL_RANGE_NAME("PortalRange");
 // Sets default values for this component's properties
@@ -91,7 +92,7 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	}
 	if (portalRange == nullptr)
 	{
-		portalRange = NewObject<UBoxComponent>(ownerAct);
+		portalRange = NewObject<UBoxComponent>(ownerAct, PORTAL_RANGE_NAME);
 		portalRange->RegisterComponent();
 		//ownerAct->AddInstanceComponent(portalRange);
 		if(doorShowSelf != nullptr)
@@ -101,14 +102,18 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	portalRange->SetRelativeLocation(FVector::ZeroVector);
 	portalRange->SetRelativeRotation(FQuat::Identity);
 	FVector extends;
-	if (doorShowSelf != nullptr)
+	if (doorShowSelf != nullptr && doorShowSelf->IsA(UStaticMeshComponent::StaticClass()))
 	{
-		extends = doorShowSelf->Bounds.BoxExtent;
+		extends = Cast<UStaticMeshComponent>(doorShowSelf)->GetStaticMesh()->GetBounds().BoxExtent * doorShowSelf->GetComponentScale() * 2;
+		
 	}
 	portalRange->SetBoxExtent(extends);
 	portalRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	portalRange->SetGenerateOverlapEvents(true);
+	portalRange->SetActive(true);
 	
+	portalRange->OnComponentBeginOverlap.Clear();
+	portalRange->OnComponentBeginOverlap.AddDynamic(this, &UPortalDoorComponent::TestDynamicAddComponent);
 }
 
 void UPortalDoorComponent::SetOtherDoor(UPortalDoorComponent * other)
@@ -187,6 +192,11 @@ void UPortalDoorComponent::OriginMaterial(const UMaterial * origin)
 			InstanceMaterial();
 		}
 	}
+}
+
+void UPortalDoorComponent::TestDynamicAddComponent(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, "Dynamic Component Touched");
 }
 
 void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix)
