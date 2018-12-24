@@ -8,8 +8,9 @@
 #include "Engine/Console.h"
 #include "Engine.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Components/BoxComponent.h"
 
-
+const FName UPortalDoorComponent::PORTAL_RANGE_NAME("PortalRange");
 // Sets default values for this component's properties
 UPortalDoorComponent::UPortalDoorComponent() : otherDoor(nullptr), doorCamera(nullptr), doorShowSelf(nullptr), bIsDoorOpenSelf(false)
 {
@@ -76,6 +77,38 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 			InstanceMaterial();
 		}
 	}
+	AActor* ownerAct = GetOwner();
+	UBoxComponent* portalRange = nullptr;
+	auto boxes = ownerAct->GetComponentsByClass(UBoxComponent::StaticClass());
+	for (auto& box : boxes)
+	{
+		auto boxref = Cast<UBoxComponent>(box);
+		if (boxref->GetAttachParent() == doorShowSelf && boxref->GetFName().IsEqual(PORTAL_RANGE_NAME))
+		{
+			portalRange = boxref;
+			break;
+		}
+	}
+	if (portalRange == nullptr)
+	{
+		portalRange = NewObject<UBoxComponent>(ownerAct);
+		portalRange->RegisterComponent();
+		//ownerAct->AddInstanceComponent(portalRange);
+		if(doorShowSelf != nullptr)
+			portalRange->AttachToComponent(doorShowSelf, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
+	}
+	
+	portalRange->SetRelativeLocation(FVector::ZeroVector);
+	portalRange->SetRelativeRotation(FQuat::Identity);
+	FVector extends;
+	if (doorShowSelf != nullptr)
+	{
+		extends = doorShowSelf->Bounds.BoxExtent;
+	}
+	portalRange->SetBoxExtent(extends);
+	portalRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+	portalRange->SetGenerateOverlapEvents(true);
+	
 }
 
 void UPortalDoorComponent::SetOtherDoor(UPortalDoorComponent * other)

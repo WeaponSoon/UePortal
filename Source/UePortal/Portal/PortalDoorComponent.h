@@ -26,7 +26,7 @@ public:
 		USceneComponent* doorShowSelf;
 private:
 	static TArray<UPortalDoorComponent*> portals;
-
+	const static FName PORTAL_RANGE_NAME;
 	UPROPERTY()
 		UPortalDoorComponent* otherDoor;
 protected:

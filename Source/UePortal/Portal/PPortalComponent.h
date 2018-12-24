@@ -21,6 +21,9 @@ public:
 		USceneCaptureComponent2D* rootCapture;
 	UPROPERTY()
 		UPPortalTree* portalTree;
+	UPROPERTY()
+		class UPortalDoorComponent* inRangePortalDoor;
+
 	UFUNCTION(BlueprintCallable, Category="Portal Component")
 		void SetPortalTree(const USceneCaptureComponent2D* capture, int32 maxLayer);
 

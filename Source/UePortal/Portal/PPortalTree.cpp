@@ -6,6 +6,8 @@
 #include "PortalDoorComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 
+const FName UPPortalTree::BACK_CAMERA_NAME("BackCamera");
+
 UPPortalNode*  UPPortalTree::QureyPortalNode(int32 layer)
 {
 	UPPortalNode* retRes = nullptr;
@@ -64,11 +66,34 @@ UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool,
 	return pool.Pop();
 }
 
-void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root)
+void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor)
 {
 	rootCamera = const_cast<USceneCaptureComponent2D*>(root);
 	rootNode = QureyPortalNode(0);
 	rootCamera->bCaptureEveryFrame = false;
+
+	auto captures = motherActor->GetComponentsByClass(USceneCaptureComponent2D::StaticClass());
+	USceneCaptureComponent2D* anotherSc = nullptr;
+	for (auto& capture : captures)
+	{
+		if (capture->GetFName().IsEqual(BACK_CAMERA_NAME, ENameCase::CaseSensitive))
+		{
+			anotherSc = Cast<USceneCaptureComponent2D>(capture);
+			break;
+		}
+	}
+	
+	if (anotherSc == nullptr)
+	{
+		anotherSc = NewObject<USceneCaptureComponent2D>(motherActor, BACK_CAMERA_NAME);
+		anotherSc->RegisterComponent();
+		//motherActor->AddInstanceComponent(anotherSc);
+	}
+	anotherSc->bCaptureEveryFrame = false;
+	anotherSc->AttachToComponent(rootCamera, FAttachmentTransformRules(EAttachmentRule::KeepRelative,false));
+	anotherSc->SetRelativeLocation(FVector::ForwardVector * 2 *  GNearClippingPlane);
+	anotherSc->SetRelativeRotation(FQuat(FVector::UpVector, PI));
+	
 }
 
 void UPPortalTree::BuildPortalTree()

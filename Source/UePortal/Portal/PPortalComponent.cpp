@@ -1,10 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #include "PPortalComponent.h"
+#include "GameFramework/Pawn.h"
 
 // Sets default values for this component's properties
 UPPortalComponent::UPPortalComponent()
 {
+	inRangePortalDoor = nullptr;
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
@@ -24,7 +25,7 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 		return;
 	rootCapture = const_cast<USceneCaptureComponent2D*>(capture);
 	portalTree = NewObject<UPPortalTree>();
-	portalTree->InitPortalTree(rootCapture);
+	portalTree->InitPortalTree(rootCapture, GetOwner());
 	rootCapture->bCaptureEveryFrame = false;
 	portalTree->maxLayer = maxLayer;
 }
@@ -33,11 +34,13 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 void UPPortalComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	if (portalTree != nullptr && rootCapture != nullptr)
+	
+	/*if (ownerPawn != nullptr && portalTree != nullptr && rootCapture != nullptr)
 	{
+			
 		portalTree->BuildPortalTree();
 		portalTree->RenderPortalTree();
-	}
+	}*/
 	// ...
 	
 }
@@ -47,7 +50,8 @@ void UPPortalComponent::BeginPlay()
 void UPPortalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (portalTree != nullptr)
+	APawn* ownerPawn = Cast<APawn>(GetOwner());
+	if (ownerPawn!= nullptr && ownerPawn->IsLocallyControlled() && portalTree != nullptr && rootCapture != nullptr)
 	{
 		portalTree->BuildPortalTree();
 		portalTree->RenderPortalTree();
