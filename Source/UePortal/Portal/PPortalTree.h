@@ -26,6 +26,14 @@ private:
 		TArray<UPPortalNode*> nodePoolLow;
 	UPROPERTY()
 		USceneCaptureComponent2D* rootCamera;
+	UPROPERTY()
+		UMaterialInterface* cameraPostPortalProcess;
+	UPROPERTY()
+		class UCameraComponent* sceneCamera;
+	UPROPERTY()
+		USceneCaptureComponent2D* anotherSc;
+	UPROPERTY()
+		UTextureRenderTarget2D* anotherRT;
 
 	const static FName BACK_CAMERA_NAME;
 public:
@@ -35,7 +43,7 @@ public:
 
 	UPPortalNode* QureyPortalNode(int32 layer);
 	void RecyclePortalNode(UPPortalNode* node);
-	void InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor);
+	void InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera);
 	void BuildPortalTree();
 	void RenderPortalTree();
 private:

@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "PortalDoorComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Camera/CameraComponent.h"
 
 const FName UPPortalTree::BACK_CAMERA_NAME("BackCamera");
 
@@ -66,14 +67,14 @@ UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool,
 	return pool.Pop();
 }
 
-void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor)
+void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera)
 {
 	rootCamera = const_cast<USceneCaptureComponent2D*>(root);
 	rootNode = QureyPortalNode(0);
 	rootCamera->bCaptureEveryFrame = false;
-
+	sceneCamera = camera;
 	auto captures = motherActor->GetComponentsByClass(USceneCaptureComponent2D::StaticClass());
-	USceneCaptureComponent2D* anotherSc = nullptr;
+	anotherSc = nullptr;
 	for (auto& capture : captures)
 	{
 		if (capture->GetFName().IsEqual(BACK_CAMERA_NAME, ENameCase::CaseSensitive))
@@ -93,7 +94,19 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* 
 	anotherSc->AttachToComponent(rootCamera, FAttachmentTransformRules(EAttachmentRule::KeepRelative,false));
 	anotherSc->SetRelativeLocation(FVector::ForwardVector * 2 *  GNearClippingPlane);
 	anotherSc->SetRelativeRotation(FQuat(FVector::UpVector, PI));
-	
+	if (anotherRT == nullptr)
+	{
+		FIntPoint reslution = GEngine->GameViewport->Viewport->GetSizeXY();
+
+		anotherRT = NewObject<UTextureRenderTarget2D>();
+		anotherRT->InitAutoFormat(reslution.X, reslution.Y);
+		anotherRT->ClearColor = FLinearColor(0, 0, 0, 1);
+		anotherRT->UpdateResourceImmediate();
+	}
+	anotherSc->TextureTarget = anotherRT;
+	anotherSc->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+	anotherSc->CompositeMode = ESceneCaptureCompositeMode::SCCM_Overwrite;
+	anotherSc->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 }
 
 void UPPortalTree::BuildPortalTree()
@@ -194,6 +207,13 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 	}
 	if (node->portalDoor == nullptr)
 	{
+		TWeakObjectPtr<UPrimitiveComponent> nearDoor = nullptr;
+		UTextureRenderTarget2D* combineTex = nullptr;
+		if (anotherSc != nullptr && anotherSc->TextureTarget != nullptr && anotherSc->ShowOnlyComponents.Num() > 0)
+		{
+			nearDoor = anotherSc->ShowOnlyComponents[0];
+		}
+
 		for (int i = 0; i < node->childrenNode.Num(); ++i)
 		{
 			if (node->childrenNode[i]->portalDoor->doorShowSelf->GetClass()->IsChildOf<UMeshComponent>())
@@ -201,9 +221,17 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 				auto mesh = Cast<UMeshComponent>(node->childrenNode[i]->portalDoor->doorShowSelf);
 				auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
 				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
+				if (nearDoor != nullptr && nearDoor->GetOwner() == mesh->GetOwner())
+				{
+					combineTex = node->childrenNode[i]->renderTexture;
+				}
 			}
 		}
-		
+		anotherSc->CaptureScene();
+		if (combineTex != nullptr && sceneCamera != nullptr)
+		{
+			//sceneCamera->PostProcessSettings.WeightedBlendables
+		}
 	}
 	else
 	{

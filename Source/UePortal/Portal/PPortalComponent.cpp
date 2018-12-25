@@ -15,7 +15,7 @@ UPPortalComponent::UPPortalComponent()
 }
 
 
-void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, int32 maxLayer)
+void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, int32 maxLayer, UCameraComponent* camera)
 {
 	if (portalTree != nullptr)
 	{
@@ -25,7 +25,7 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 		return;
 	rootCapture = const_cast<USceneCaptureComponent2D*>(capture);
 	portalTree = NewObject<UPPortalTree>();
-	portalTree->InitPortalTree(rootCapture, GetOwner());
+	portalTree->InitPortalTree(rootCapture, GetOwner(), camera);
 	rootCapture->bCaptureEveryFrame = false;
 	portalTree->maxLayer = maxLayer;
 }
