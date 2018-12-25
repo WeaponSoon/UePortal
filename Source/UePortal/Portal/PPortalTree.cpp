@@ -230,7 +230,7 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 		anotherSc->CaptureScene();
 		if (combineTex != nullptr && sceneCamera != nullptr)
 		{
-			//sceneCamera->PostProcessSettings.WeightedBlendables
+			//sceneCamera->PostProcessSettings.WeightedBlendables.Array
 		}
 	}
 	else
