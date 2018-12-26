@@ -134,6 +134,8 @@ void UPortalDoorComponent::SetOtherDoor(UPortalDoorComponent * other)
 	if (bIsDoorOpen())
 	{
 		doorCamera->bCaptureEveryFrame = false;
+		doorCamera->bCaptureOnMovement = false;
+		doorCamera->bCameraCutThisFrame = true;
 	}
 }
 

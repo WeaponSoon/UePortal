@@ -17,4 +17,6 @@ class UEPORTAL_API UPortalBlueprintCommonFunctions : public UBlueprintFunctionLi
 public:
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
 		static int GetNowPortalNum();
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Portal Component")
+		static float GlobalClipPlane();
 };

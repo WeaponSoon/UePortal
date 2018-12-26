@@ -110,6 +110,8 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* 
 	anotherSc->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	anotherSc->CompositeMode = ESceneCaptureCompositeMode::SCCM_Overwrite;
 	anotherSc->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+	anotherSc->bCaptureOnMovement = false;
+	anotherSc->bCameraCutThisFrame = true;
 	if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
 	{
 		UMaterialInterface* matInf = Cast<UMaterialInterface>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
@@ -258,18 +260,29 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 			}
 		}
 		
-		UMaterialInterface* temp = nullptr;
+		//UMaterialInterface* temp = nullptr;
 		if (nearDoor != nullptr && combineTex != nullptr)
 		{
-			temp = Cast<UMeshComponent>(nearDoor)->GetMaterial(0);
-			Cast<UMeshComponent>(nearDoor)->SetMaterial(0, doorShowBack);
+			auto matS = Cast<UMeshComponent>(nearDoor)->GetMaterial(0);
+			
+			float value = -1;
+			Cast<UMaterialInstanceDynamic>(matS)->GetScalarParameterValue(FMaterialParameterInfo("SwitchSide"), value);
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString("Before: ") + FString::SanitizeFloat(value));
+			
+			Cast<UMaterialInstanceDynamic>(matS)->SetScalarParameterValue("SwitchSide", 0);
+			
+			Cast<UMaterialInstanceDynamic>(matS)->GetScalarParameterValue(FMaterialParameterInfo("SwitchSide"), value);
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString("After: ") + FString::SanitizeFloat(value));
+			//Cast<UMeshComponent>(nearDoor)->SetMaterial(0, doorShowBack);
 		}
 
 		anotherSc->CaptureScene();
 		
-		if (temp != nullptr)
+		if (nearDoor != nullptr && combineTex != nullptr)
 		{
-			Cast<UMeshComponent>(nearDoor)->SetMaterial(0, temp);
+			auto matS = Cast<UMeshComponent>(nearDoor)->GetMaterial(0);
+			Cast<UMaterialInstanceDynamic>(matS)->SetScalarParameterValue("SwitchSide", 1);
+			//Cast<UMeshComponent>(nearDoor)->SetMaterial(0, doorShowBack);
 		}
 
 		if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)

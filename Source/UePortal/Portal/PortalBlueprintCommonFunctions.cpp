@@ -7,3 +7,8 @@ int UPortalBlueprintCommonFunctions::GetNowPortalNum()
 {
 	return UPortalDoorComponent::GetAllPortals().Num();
 }
+
+float UPortalBlueprintCommonFunctions::GlobalClipPlane()
+{
+	return GNearClippingPlane;
+}
