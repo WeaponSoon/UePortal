@@ -36,6 +36,8 @@ private:
 		UTextureRenderTarget2D* anotherRT;
 
 	const static FName BACK_CAMERA_NAME;
+	const static FName BACK_CAMERA_MASK_PARA_NAME;
+	const static FName BACK_CAMERA_RENDER_PARA_NAME;
 public:
 
 	UPROPERTY()

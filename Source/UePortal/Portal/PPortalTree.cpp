@@ -8,6 +8,8 @@
 #include "Camera/CameraComponent.h"
 
 const FName UPPortalTree::BACK_CAMERA_NAME("BackCamera");
+const FName UPPortalTree::BACK_CAMERA_MASK_PARA_NAME("PortalMask");
+const FName UPPortalTree::BACK_CAMERA_RENDER_PARA_NAME("PortalRender");
 
 UPPortalNode*  UPPortalTree::QureyPortalNode(int32 layer)
 {
@@ -107,6 +109,33 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* 
 	anotherSc->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	anotherSc->CompositeMode = ESceneCaptureCompositeMode::SCCM_Overwrite;
 	anotherSc->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+	if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
+	{
+		UMaterialInterface* matInf = Cast<UMaterialInterface>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
+		UMaterialInstanceDynamic* mat = UMaterialInstanceDynamic::Create(matInf, nullptr);
+		sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object = mat;
+		sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Weight = 1;
+		if (mat != nullptr)
+		{
+			UTexture* param;
+			if (mat->GetTextureParameterValue(FMaterialParameterInfo(BACK_CAMERA_MASK_PARA_NAME), param))
+			{
+				mat->SetTextureParameterValue(BACK_CAMERA_MASK_PARA_NAME, anotherRT);
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: No Suitable Parameter Found In The First PostProcessMaterial");
+			}
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: First PostProcessMaterial Is Not A Material Instance Dynamic!");
+		}
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: No Specific Camera Or Do Not Have PostProcessMaterial!");
+	}
 }
 
 void UPPortalTree::BuildPortalTree()
@@ -228,9 +257,30 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 			}
 		}
 		anotherSc->CaptureScene();
-		if (combineTex != nullptr && sceneCamera != nullptr)
+		
+		if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
 		{
-			//sceneCamera->PostProcessSettings.WeightedBlendables.Array
+			UMaterialInstanceDynamic* mat = Cast<UMaterialInstanceDynamic>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
+			if (mat != nullptr)
+			{
+				UTexture* param;
+				if (mat->GetTextureParameterValue(FMaterialParameterInfo(BACK_CAMERA_RENDER_PARA_NAME), param))
+				{
+					mat->SetTextureParameterValue(BACK_CAMERA_RENDER_PARA_NAME, combineTex);
+				}
+				else
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: No Suitable Parameter Found In The First PostProcessMaterial");
+				}
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: First PostProcessMaterial Is Not A Material Instance Dynamic!");
+			}
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: No Specific Camera Or Do Not Have PostProcessMaterial!");
 		}
 	}
 	else
