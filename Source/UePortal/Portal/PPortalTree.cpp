@@ -69,8 +69,9 @@ UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool,
 	return pool.Pop();
 }
 
-void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera)
+void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera, UMaterialInterface* back)
 {
+	doorShowBack = back;
 	rootCamera = const_cast<USceneCaptureComponent2D*>(root);
 	rootNode = QureyPortalNode(0);
 	rootCamera->bCaptureEveryFrame = false;
@@ -250,14 +251,27 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 				auto mesh = Cast<UMeshComponent>(node->childrenNode[i]->portalDoor->doorShowSelf);
 				auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
 				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
-				if (nearDoor != nullptr && nearDoor->GetOwner() == mesh->GetOwner())
+				if (nearDoor != nullptr && nearDoor == mesh)
 				{
 					combineTex = node->childrenNode[i]->renderTexture;
 				}
 			}
 		}
+		
+		UMaterialInterface* temp = nullptr;
+		if (nearDoor != nullptr && combineTex != nullptr)
+		{
+			temp = Cast<UMeshComponent>(nearDoor)->GetMaterial(0);
+			Cast<UMeshComponent>(nearDoor)->SetMaterial(0, doorShowBack);
+		}
+
 		anotherSc->CaptureScene();
 		
+		if (temp != nullptr)
+		{
+			Cast<UMeshComponent>(nearDoor)->SetMaterial(0, temp);
+		}
+
 		if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
 		{
 			UMaterialInstanceDynamic* mat = Cast<UMaterialInstanceDynamic>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);

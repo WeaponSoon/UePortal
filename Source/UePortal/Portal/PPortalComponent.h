@@ -25,7 +25,7 @@ public:
 		class UPortalDoorComponent* inRangePortalDoor;
 
 	UFUNCTION(BlueprintCallable, Category="Portal Component")
-		void SetPortalTree(const USceneCaptureComponent2D* capture, int32 maxLayer, class UCameraComponent* sceneCamera);
+		void SetPortalTree(const USceneCaptureComponent2D* capture, int32 maxLayer, class UCameraComponent* sceneCamera, class UMaterialInterface* backMat);
 
 protected:
 	// Called when the game starts
