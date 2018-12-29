@@ -24,10 +24,12 @@ class UEPORTAL_API IThroughable
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	TSet<TWeakObjectPtr<UPortalDoorComponent>> nearPortals;
-	class UPortalDoorComponent* passingPortal;
-
+	TWeakObjectPtr<UPortalDoorComponent> passingPortal;
+	TWeakObjectPtr<USceneComponent> throughableComponent;
 	UFUNCTION()
 		virtual void AddNearPortalDoor(UPortalDoorComponent* nearPortal);
 	UFUNCTION()
 		virtual void RemoveNearPortalDoor(UPortalDoorComponent* nearPortal);
+	UFUNCTION()
+		virtual void UpdatePassingPortal();
 };

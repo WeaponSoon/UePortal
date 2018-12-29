@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "PPortalComponent.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
 
 // Sets default values for this component's properties
@@ -25,6 +26,8 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 		return;
 	rootCapture = const_cast<USceneCaptureComponent2D*>(capture);
 	portalTree = NewObject<UPPortalTree>();
+	mainCamera = camera;
+	throughableComponent = camera;
 	portalTree->InitPortalTree(rootCapture, GetOwner(), camera, backMat);
 	rootCapture->bCaptureEveryFrame = false;
 	portalTree->maxLayer = maxLayer;
@@ -53,6 +56,7 @@ void UPPortalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	APawn* ownerPawn = Cast<APawn>(GetOwner());
 	if (ownerPawn!= nullptr && ownerPawn->IsLocallyControlled() && portalTree != nullptr && rootCapture != nullptr)
 	{
+		UpdatePassingPortal();
 		portalTree->BuildPortalTree();
 		portalTree->RenderPortalTree();
 	}

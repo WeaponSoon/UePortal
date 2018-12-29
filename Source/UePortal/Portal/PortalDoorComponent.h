@@ -30,16 +30,21 @@ public:
 		float portalRangeZLength;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Portal Component")
 		TArray<FCustomMeshTriangle> meshTriggles;
+	
 private:
 	static TArray<UPortalDoorComponent*> portals;
 	const static FName PORTAL_RANGE_NAME;
 	UPROPERTY()
 		UPortalDoorComponent* otherDoor;
+	UPROPERTY()
+		TSet<TWeakObjectPtr<USceneComponent>> overlapedThroughableComp;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:	
+	UPROPERTY()
+		class UBoxComponent* portalRange;
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -68,5 +73,6 @@ public:
 	UFUNCTION(BlueprintSetter, Category = "Portal Component")
 		void OriginMaterial(const UMaterial* origin);
 	UFUNCTION()
-		void TestDynamicAddComponent(class UPrimitiveComponent* HitComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+		void TestDynamicAddComponent();
+	//void TestDynamicAddComponent(class UPrimitiveComponent* HitComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

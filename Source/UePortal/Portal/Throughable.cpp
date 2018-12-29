@@ -18,3 +18,26 @@ void IThroughable::RemoveNearPortalDoor(UPortalDoorComponent * nearPortal)
 		nearPortals.Remove(nearPortal);
 	}
 }
+
+void IThroughable::UpdatePassingPortal()
+{
+	if (!throughableComponent.IsValid())
+	{
+		passingPortal.Reset();
+		nearPortals.Empty();
+		return;
+	}
+		
+	passingPortal.Reset();
+	for (auto& portal : nearPortals)
+	{
+		if (portal.IsValid())
+		{
+			if (!passingPortal.IsValid() || (throughableComponent->GetComponentLocation() - portal->doorShowSelf->GetComponentLocation()).SizeSquared() <
+				(throughableComponent->GetComponentLocation() - passingPortal->doorShowSelf->GetComponentLocation()).SizeSquared())
+			{
+				passingPortal = portal;
+			}
+		}
+	}
+}

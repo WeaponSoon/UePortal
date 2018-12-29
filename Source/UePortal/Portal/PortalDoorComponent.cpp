@@ -10,6 +10,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/BoxComponent.h"
 #include "Delegates/Delegate.h"
+#include "Throughable.h"
 #include "CustomMeshComponent.h"
 
 const FName UPortalDoorComponent::PORTAL_RANGE_NAME("PortalRange");
@@ -41,7 +42,10 @@ void UPortalDoorComponent::BeginPlay()
 void UPortalDoorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	if (bIsDoorOpen())
+	{
+		//TODO find throughable components in portal range;
+	}
 	// ...
 }
 
@@ -101,7 +105,7 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 		}
 	}
 	AActor* ownerAct = GetOwner();
-	UBoxComponent* portalRange = nullptr;
+	portalRange = nullptr;
 	auto boxeCs = ownerAct->GetComponentsByClass(UBoxComponent::StaticClass());
 	for (int i = 0; i < boxeCs.Num(); ++i)
 	{
@@ -136,7 +140,7 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	portalRange->SetActive(true);
 	
 	portalRange->OnComponentBeginOverlap.Clear();
-	portalRange->OnComponentBeginOverlap.AddDynamic(this, &UPortalDoorComponent::TestDynamicAddComponent);
+	//portalRange->OnComponentBeginOverlap.AddDynamic(this, &UPortalDoorComponent::TestDynamicAddComponent);
 }
 
 void UPortalDoorComponent::SetOtherDoor(UPortalDoorComponent * other)
@@ -219,10 +223,37 @@ void UPortalDoorComponent::OriginMaterial(const UMaterial * origin)
 	}
 }
 
-void UPortalDoorComponent::TestDynamicAddComponent(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void UPortalDoorComponent::TestDynamicAddComponent()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, "Dynamic Component Touched");
-	
+	auto res = portalRange;
+	if (res != nullptr)
+	{
+		UBoxComponent* box = Cast<UBoxComponent>(res);
+		TSet<UPrimitiveComponent*> overlaped;
+		TSet<UPrimitiveComponent*> overlapedThroughable;
+		box->GetOverlappingComponents(overlaped);
+		for (auto& comp : overlaped)
+		{
+			//check if the comp is a throughable component, if so, add it to overlapedThroughable set
+			if (comp->GetOwner() != nullptr)
+			{
+				auto thrs = comp->GetOwner()->GetComponents();
+				for (auto& thr : thrs)
+				{
+					if (thr->GetClass()->Implements<UThroughable>())
+					{
+						if (Cast<IThroughable>(thr)->throughableComponent.IsValid() && Cast<IThroughable>(thr)->throughableComponent.Get() == comp)
+						{
+							overlapedThroughable.Add(comp);
+							break;
+						}
+					}
+				}
+			}
+		}
+		//TODO compair current overlaped throughable and the new one then update;
+	}
 }
 
 void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix)
