@@ -19,4 +19,6 @@ public:
 		static int GetNowPortalNum();
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Portal Component")
 		static float GlobalClipPlane();
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Portal Component|Test")
+		static bool IsTwoWeakPointEqual(UObject* a, UObject* b);
 };

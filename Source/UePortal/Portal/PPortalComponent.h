@@ -6,11 +6,12 @@
 #include "Components/ActorComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "PPortalTree.h"
+#include "Throughable.h"
 #include "PPortalComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class UEPORTAL_API UPPortalComponent : public UActorComponent
+class UEPORTAL_API UPPortalComponent : public UActorComponent, public IThroughable
 {
 	GENERATED_BODY()
 

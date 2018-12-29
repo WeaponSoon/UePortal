@@ -123,7 +123,7 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	
 	
 	FVector extends;
-	if (doorShowSelf != nullptr && doorShowSelf->IsA(UStaticMeshComponent::StaticClass()))
+	if (doorShowSelf != nullptr)
 	{
 		portalRange->SetRelativeLocation(FVector(portalRangeZLength / 2, 0, 0) * doorShowSelf->GetComponentScale());
 		portalRange->SetRelativeRotation(FQuat::Identity);
@@ -222,6 +222,7 @@ void UPortalDoorComponent::OriginMaterial(const UMaterial * origin)
 void UPortalDoorComponent::TestDynamicAddComponent(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, "Dynamic Component Touched");
+	
 }
 
 void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix)

@@ -60,3 +60,4 @@ void UPPortalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	// ...
 }
 
+
