@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "CustomMeshComponent.h"
 #include "PortalDoorComponent.generated.h"
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UEPORTAL_API UPortalDoorComponent : public UActorComponent
@@ -23,7 +23,13 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
 		USceneCaptureComponent2D* doorCamera;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
-		USceneComponent* doorShowSelf;
+		class UCustomMeshComponent* doorShowSelf;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
+		FVector2D portalSize;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Portal Component")
+		float portalRangeZLength;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Portal Component")
+		TArray<FCustomMeshTriangle> meshTriggles;
 private:
 	static TArray<UPortalDoorComponent*> portals;
 	const static FName PORTAL_RANGE_NAME;
@@ -43,10 +49,10 @@ public:
 
 	static void BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix);
 	static FVector ProjectWorldToScreen(const FVector& worldPos, const FMatrix& projMatrix, bool bKeepZ = false);
-	static FBox GetSceneComponentScreenBox(const USceneComponent* sceneCom, USceneCaptureComponent2D* capture);
+	static FBox GetSceneComponentScreenBox(const UCustomMeshComponent* sceneCom, const TArray<FCustomMeshTriangle>& triggles,USceneCaptureComponent2D* capture);
 
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
-		void InitPortalDoor(const USceneCaptureComponent2D* camera, const USceneComponent* model, const UMaterial* mat, bool isOpenSelfFirst);
+		void InitPortalDoor(const USceneCaptureComponent2D* camera, const UCustomMeshComponent* model, const UMaterial* mat, bool isOpenSelfFirst);
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
 		void SetOtherDoor(UPortalDoorComponent* other);
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Portal Component")

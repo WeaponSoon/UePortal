@@ -163,7 +163,8 @@ void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node, int layer)
 		curCam->ClipPlaneBase = node->clipPlanePos;
 	}
 	FBox lastBox = node->portalDoor == nullptr ?
-		FBox(FVector(-1, -1, 0), FVector(1, 1, 0)) : UPortalDoorComponent::GetSceneComponentScreenBox(node->portalDoor->GetOtherDoor()->doorShowSelf, curCam);
+		FBox(FVector(-1, -1, 0), FVector(1, 1, 0)) : 
+		UPortalDoorComponent::GetSceneComponentScreenBox(node->portalDoor->GetOtherDoor()->doorShowSelf, node->portalDoor->GetOtherDoor()->meshTriggles, curCam);
 	for (int i = 0; i < UPortalDoorComponent::GetAllPortals().Num(); ++i)
 	{
 		auto nextPortalDoor = UPortalDoorComponent::GetAllPortals()[i];
@@ -239,75 +240,11 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 	}
 	if (node->portalDoor == nullptr)
 	{
-		TWeakObjectPtr<UPrimitiveComponent> nearDoor = nullptr;
-		UTextureRenderTarget2D* combineTex = nullptr;
-		if (anotherSc != nullptr && anotherSc->TextureTarget != nullptr && anotherSc->ShowOnlyComponents.Num() > 0)
-		{
-			nearDoor = anotherSc->ShowOnlyComponents[0];
-		}
-
 		for (int i = 0; i < node->childrenNode.Num(); ++i)
 		{
-			if (node->childrenNode[i]->portalDoor->doorShowSelf->GetClass()->IsChildOf<UMeshComponent>())
-			{
-				auto mesh = Cast<UMeshComponent>(node->childrenNode[i]->portalDoor->doorShowSelf);
-				auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
-				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
-				if (nearDoor != nullptr && nearDoor == mesh)
-				{
-					combineTex = node->childrenNode[i]->renderTexture;
-				}
-			}
-		}
-		
-		//UMaterialInterface* temp = nullptr;
-		if (nearDoor != nullptr && combineTex != nullptr)
-		{
-			auto matS = Cast<UMeshComponent>(nearDoor)->GetMaterial(0);
-			
-			float value = -1;
-			Cast<UMaterialInstanceDynamic>(matS)->GetScalarParameterValue(FMaterialParameterInfo("SwitchSide"), value);
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString("Before: ") + FString::SanitizeFloat(value));
-			
-			Cast<UMaterialInstanceDynamic>(matS)->SetScalarParameterValue("SwitchSide", 0);
-			
-			Cast<UMaterialInstanceDynamic>(matS)->GetScalarParameterValue(FMaterialParameterInfo("SwitchSide"), value);
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString("After: ") + FString::SanitizeFloat(value));
-			//Cast<UMeshComponent>(nearDoor)->SetMaterial(0, doorShowBack);
-		}
-
-		anotherSc->CaptureScene();
-		
-		if (nearDoor != nullptr && combineTex != nullptr)
-		{
-			auto matS = Cast<UMeshComponent>(nearDoor)->GetMaterial(0);
-			Cast<UMaterialInstanceDynamic>(matS)->SetScalarParameterValue("SwitchSide", 1);
-			//Cast<UMeshComponent>(nearDoor)->SetMaterial(0, doorShowBack);
-		}
-
-		if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
-		{
-			UMaterialInstanceDynamic* mat = Cast<UMaterialInstanceDynamic>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
-			if (mat != nullptr)
-			{
-				UTexture* param;
-				if (mat->GetTextureParameterValue(FMaterialParameterInfo(BACK_CAMERA_RENDER_PARA_NAME), param))
-				{
-					mat->SetTextureParameterValue(BACK_CAMERA_RENDER_PARA_NAME, combineTex);
-				}
-				else
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: No Suitable Parameter Found In The First PostProcessMaterial");
-				}
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: First PostProcessMaterial Is Not A Material Instance Dynamic!");
-			}
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "ERROR: No Specific Camera Or Do Not Have PostProcessMaterial!");
+			auto mesh = node->childrenNode[i]->portalDoor->doorShowSelf;
+			auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
+			matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
 		}
 	}
 	else
@@ -320,12 +257,9 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 		node->portalDoor->doorCamera->TextureTarget = node->renderTexture;
 		for (int i = 0; i < node->childrenNode.Num(); ++i)
 		{
-			if (node->childrenNode[i]->portalDoor->doorShowSelf->GetClass()->IsChildOf<UMeshComponent>())
-			{
-				auto mesh = Cast<UMeshComponent>(node->childrenNode[i]->portalDoor->doorShowSelf);
-				auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
-				matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
-			}
+			auto mesh = node->childrenNode[i]->portalDoor->doorShowSelf;
+			auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
+			matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
 		}
 		node->portalDoor->doorCamera->CaptureScene();
 	}

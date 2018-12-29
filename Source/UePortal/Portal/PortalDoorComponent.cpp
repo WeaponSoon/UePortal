@@ -10,6 +10,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Components/BoxComponent.h"
 #include "Delegates/Delegate.h"
+#include "CustomMeshComponent.h"
 
 const FName UPortalDoorComponent::PORTAL_RANGE_NAME("PortalRange");
 // Sets default values for this component's properties
@@ -60,16 +61,37 @@ const TArray<UPortalDoorComponent*>& UPortalDoorComponent::GetAllPortals()
 	// TODO: 在此处插入 return 语句
 }
 
-void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camera, const USceneComponent * model, const UMaterial * mat, bool isOpenSelfFirst)
+void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camera, const UCustomMeshComponent * model, const UMaterial * mat, bool isOpenSelfFirst)
 {
 	doorCamera = const_cast<USceneCaptureComponent2D*>(camera);
-	doorShowSelf = const_cast<USceneComponent*>(model);
+	doorShowSelf = const_cast<UCustomMeshComponent*>(model);
 	bIsDoorOpenSelf = isOpenSelfFirst;
 	if (doorCamera != nullptr)
 	{
 		doorCamera->bCaptureEveryFrame = false;
 	}
 
+	
+	if (doorShowSelf != nullptr)
+	{
+		auto doorHalfSize = portalSize / 2;
+		TArray<FCustomMeshTriangle> triggles;
+		FCustomMeshTriangle triggle;
+		triggle.Vertex0 = FVector(0,-doorHalfSize.X, doorHalfSize.Y);
+		triggle.Vertex1 = FVector(0, doorHalfSize.X, doorHalfSize.Y);
+		triggle.Vertex2 = FVector(0, -doorHalfSize.X, -doorHalfSize.Y);
+		FCustomMeshTriangle triggle1;
+		triggle1.Vertex0 = FVector(0, -doorHalfSize.X, -doorHalfSize.Y);
+		triggle1.Vertex1 = FVector(0, doorHalfSize.X, doorHalfSize.Y);
+		triggle1.Vertex2 = FVector(0, doorHalfSize.X, -doorHalfSize.Y);
+		triggles.Add(triggle);
+		triggles.Add(triggle1);
+		doorShowSelf->SetCustomMeshTriangles(triggles);
+		
+		meshTriggles.Empty();
+		meshTriggles.Add(triggle);
+		meshTriggles.Add(triggle1);
+	}
 	if (originMat != const_cast<UMaterial*>(mat))
 	{
 		originMat = const_cast<UMaterial*>(mat);
@@ -80,11 +102,11 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	}
 	AActor* ownerAct = GetOwner();
 	UBoxComponent* portalRange = nullptr;
-	auto boxes = ownerAct->GetComponentsByClass(UBoxComponent::StaticClass());
-	for (auto& box : boxes)
+	auto boxeCs = ownerAct->GetComponentsByClass(UBoxComponent::StaticClass());
+	for (int i = 0; i < boxeCs.Num(); ++i)
 	{
-		auto boxref = Cast<UBoxComponent>(box);
-		if (boxref->GetAttachParent() == doorShowSelf && boxref->GetFName().IsEqual(PORTAL_RANGE_NAME))
+		auto boxref = Cast<UBoxComponent>(boxeCs[i]);
+		if (Cast<UCustomMeshComponent>(boxref->GetAttachParent()) != nullptr && Cast<UCustomMeshComponent>(boxref->GetAttachParent()) == doorShowSelf && boxref->GetFName().IsEqual(PORTAL_RANGE_NAME))
 		{
 			portalRange = boxref;
 			break;
@@ -99,12 +121,13 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 			portalRange->AttachToComponent(doorShowSelf, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 	}
 	
-	portalRange->SetRelativeLocation(FVector::ZeroVector);
-	portalRange->SetRelativeRotation(FQuat::Identity);
+	
 	FVector extends;
 	if (doorShowSelf != nullptr && doorShowSelf->IsA(UStaticMeshComponent::StaticClass()))
 	{
-		extends = Cast<UStaticMeshComponent>(doorShowSelf)->GetStaticMesh()->GetBounds().BoxExtent * doorShowSelf->GetComponentScale() * 2;
+		portalRange->SetRelativeLocation(FVector(portalRangeZLength / 2, 0, 0) * doorShowSelf->GetComponentScale());
+		portalRange->SetRelativeRotation(FQuat::Identity);
+		extends = FVector(portalRangeZLength / 2, portalSize.X/2, portalSize.Y/2);
 		
 	}
 	portalRange->SetBoxExtent(extends);
@@ -156,7 +179,7 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 	
 	if (bIsDoorOpen())
 	{
-		FBox myBox = GetSceneComponentScreenBox(this->doorShowSelf, capture);
+		FBox myBox = GetSceneComponentScreenBox(this->doorShowSelf, meshTriggles, capture);
 		FBox2D myRect(FVector2D(myBox.Min.X, myBox.Min.Y), FVector2D(myBox.Max.X, myBox.Max.Y));
 		FBox2D lastRect(FVector2D(lastBox.Min.X, lastBox.Min.Y), FVector2D(lastBox.Max.X, lastBox.Max.Y));
 		//return bIsDoorOpen();
@@ -170,11 +193,11 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 
 void UPortalDoorComponent::InstanceMaterial()
 {
-	if (doorShowSelf != nullptr && doorShowSelf->GetClass()->IsChildOf<UPrimitiveComponent>())
+	if (doorShowSelf != nullptr)
 	{
 		if (originMat != nullptr)
 		{
-			Cast<UPrimitiveComponent>(doorShowSelf)->CreateDynamicMaterialInstance(0, originMat);
+			doorShowSelf->CreateDynamicMaterialInstance(0, originMat);
 		}
 	}
 }
@@ -278,35 +301,64 @@ FVector UPortalDoorComponent::ProjectWorldToScreen(const FVector & worldPos, con
 	return FVector(0,0,0);
 }
 
-FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sceneCom, USceneCaptureComponent2D * capture)
+FBox UPortalDoorComponent::GetSceneComponentScreenBox(const UCustomMeshComponent * sceneCom, const TArray<FCustomMeshTriangle>& triggles, USceneCaptureComponent2D * capture)
 {
+	TArray<FVector> point;
 	FMatrix res;
 	BuildProjectionMatrix(GEngine->GameViewport->Viewport->GetSizeXY(),
 		capture->ProjectionType,
 		capture->FOVAngle * (float)PI / 360.0f, capture->OrthoWidth, res);
-	auto selfBounds = sceneCom->CalcBounds(sceneCom->GetComponentTransform().GetRelativeTransform(capture->GetComponentTransform()));
+	//auto selfBounds = sceneCom->CalcBounds(sceneCom->GetComponentTransform().GetRelativeTransform(capture->GetComponentTransform()));
+	const FTransform& componentToWorld = sceneCom->GetComponentTransform();
+	const FTransform& worldToEye = capture->GetComponentTransform().Inverse();
+	for (int i = 0; i < triggles.Num(); ++i)
+	{
+		FVector pointInWrold[] = { 
+			componentToWorld.TransformPosition(triggles[i].Vertex0),
+			componentToWorld.TransformPosition(triggles[i].Vertex1), 
+			componentToWorld.TransformPosition(triggles[i].Vertex2) };
+		int lines[] = { 0,1,1,2,2,3 };
+		for (int j = 0; j < 6; j += 2)
+		{
+			FVector p1 = worldToEye.TransformPosition(pointInWrold[lines[j]]);
+			FVector p2 = worldToEye.TransformPosition(pointInWrold[lines[j + 1]]);
+			if (p1.X - GNearClippingPlane >= 0)
+			{
+				point.Add(p1);
+			}
+			if (p2.X - GNearClippingPlane >= 0)
+			{
+				point.Add(p2);
+			}
+			if ((p1.X - GNearClippingPlane) * (p2.X - GNearClippingPlane) < 0)
+			{
+				FVector dir = p1 - p2;
+				dir.Normalize();
+				float ratio = FMath::Abs(GNearClippingPlane - p2.X) / FMath::Abs(p1.X - p2.X);
+				point.Add(p2 + dir * ratio * (p1 - p2).Size());
+			}
+		}
+	}
 
-	FVector point[8];
-	point[0] = selfBounds.Origin + FVector(selfBounds.BoxExtent.X, selfBounds.BoxExtent.Y, selfBounds.BoxExtent.Z);
+	/*point[0] = selfBounds.Origin + FVector(selfBounds.BoxExtent.X, selfBounds.BoxExtent.Y, selfBounds.BoxExtent.Z);
 	point[1] = selfBounds.Origin + FVector(-selfBounds.BoxExtent.X, selfBounds.BoxExtent.Y, selfBounds.BoxExtent.Z);
 	point[2] = selfBounds.Origin + FVector(selfBounds.BoxExtent.X, -selfBounds.BoxExtent.Y, selfBounds.BoxExtent.Z);
 	point[3] = selfBounds.Origin + FVector(selfBounds.BoxExtent.X, selfBounds.BoxExtent.Y, -selfBounds.BoxExtent.Z);
 	point[4] = selfBounds.Origin + FVector(selfBounds.BoxExtent.X, -selfBounds.BoxExtent.Y, -selfBounds.BoxExtent.Z);
 	point[5] = selfBounds.Origin + FVector(-selfBounds.BoxExtent.X, selfBounds.BoxExtent.Y, -selfBounds.BoxExtent.Z);
 	point[6] = selfBounds.Origin + FVector(-selfBounds.BoxExtent.X, -selfBounds.BoxExtent.Y, selfBounds.BoxExtent.Z);
-	point[7] = selfBounds.Origin + FVector(-selfBounds.BoxExtent.X, -selfBounds.BoxExtent.Y, -selfBounds.BoxExtent.Z);
-	FVector screenPoint[8];
-	for (int i = 0; i < 8; ++i)
+	point[7] = selfBounds.Origin + FVector(-selfBounds.BoxExtent.X, -selfBounds.BoxExtent.Y, -selfBounds.BoxExtent.Z);*/
+	TArray<FVector> screenPoint;
+	for (int i = 0; i < point.Num(); ++i)
 	{
-		if (point[i].X < GNearClippingPlane / 2)
-		{
-			point[i].X = GNearClippingPlane / 2;
-		}
-		screenPoint[i] = ProjectWorldToScreen(point[i], res, true);
-		
+		screenPoint.Add(ProjectWorldToScreen(point[i], res, true));	
 		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, sceneCom->GetOwner()->GetName() + ": " + screenPoint[i].ToString());
 	}
 	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, sceneCom->GetOwner()->GetName() + ": " + ProjectWorldToScreen(selfBounds.Origin,res,true).ToString());
+	if (screenPoint.Num() <= 0)
+	{
+		return FBox(FVector(0, 0, -1000), FVector(1, 1, -999));
+	}
 
 	float xMin = screenPoint[0].X;
 	float xMax = screenPoint[0].X;
@@ -314,7 +366,7 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const USceneComponent * sc
 	float yMax = screenPoint[0].Y;
 	float zMin = screenPoint[0].Z;
 	float zMax = screenPoint[0].Z;
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < screenPoint.Num(); ++i)
 	{
 		if (screenPoint[i].X < xMin)
 		{
