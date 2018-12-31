@@ -6,6 +6,7 @@
 #include "PortalDoorComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Camera/CameraComponent.h"
+#include "PPortalComponent.h"
 
 const FName UPPortalTree::BACK_CAMERA_NAME("BackCamera");
 const FName UPPortalTree::BACK_CAMERA_MASK_PARA_NAME("PortalMask");
@@ -69,8 +70,9 @@ UPPortalNode* UPPortalTree::QureyPortalNodeInternal(TArray<UPPortalNode*>& pool,
 	return pool.Pop();
 }
 
-void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera, UMaterialInterface* back)
+void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera, UMaterialInterface* back, UPPortalComponent* mot)
 {
+	outMot = mot;
 	doorShowBack = back;
 	rootCamera = const_cast<USceneCaptureComponent2D*>(root);
 	rootNode = QureyPortalNode(0);
@@ -240,11 +242,53 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 	}
 	if (node->portalDoor == nullptr)
 	{
+		FVector4 PortalPos(0, 0, 300, 1);
+		FVector4 PortalNor(0, 0, -1, 0);
+		float NearPlane = GNearClippingPlane;
+		UPortalDoorComponent* passing = nullptr;
+		if (outMot != nullptr && outMot->passingPortal.IsValid())
+		{
+			passing = outMot->passingPortal.Get();
+			FMatrix changeAxis(
+				FPlane(0, 0, 1, 0),
+				FPlane(1, 0, 0, 0),
+				FPlane(0, 1, 0, 0),
+				FPlane(0, 0, 0, 1));
+			const auto& toEye = sceneCamera->GetComponentTransform().Inverse();
+			PortalPos = changeAxis.TransformFVector4(toEye.TransformFVector4(FVector4(passing->doorShowSelf->GetComponentLocation(),1)));
+			PortalNor = changeAxis.TransformFVector4(toEye.TransformFVector4(FVector4(passing->doorShowSelf->GetForwardVector(),0)));
+		}
+
+		if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
+		{
+			UMaterialInterface* matInf = Cast<UMaterialInterface>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
+			UMaterialInstanceDynamic* mat = Cast<UMaterialInstanceDynamic>(matInf);
+			if (mat != nullptr)
+			{
+				mat->SetVectorParameterValue(FName("PortalPos"), FLinearColor(PortalPos));
+				mat->SetVectorParameterValue(FName("PortalNor"), FLinearColor(PortalNor));
+				mat->SetScalarParameterValue(FName("NearPlane"), NearPlane);
+			}
+		}
+
 		for (int i = 0; i < node->childrenNode.Num(); ++i)
 		{
 			auto mesh = node->childrenNode[i]->portalDoor->doorShowSelf;
 			auto matInstDyn = Cast<UMaterialInstanceDynamic>(mesh->GetMaterial(0));
 			matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
+			if (passing != nullptr && passing == node->childrenNode[i]->portalDoor)
+			{
+				if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
+				{
+					UMaterialInterface* matInf = Cast<UMaterialInterface>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
+					UMaterialInstanceDynamic* mat = Cast<UMaterialInstanceDynamic>(matInf);
+					if (mat != nullptr)
+					{
+						mat->SetTextureParameterValue(FName("PortalRender"), node->childrenNode[i]->renderTexture);
+						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Touched ") + passing->GetName());
+					}
+				}
+			}
 		}
 	}
 	else

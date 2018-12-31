@@ -16,5 +16,5 @@ float UPortalBlueprintCommonFunctions::GlobalClipPlane()
 bool UPortalBlueprintCommonFunctions::IsTwoWeakPointEqual(UObject * a, UObject * b)
 {
 	TWeakPtr<UObject> r;
-	return TWeakObjectPtr<UObject>(a) == TWeakObjectPtr<UObject>(b);
+	return TWeakObjectPtr<UObject>(a) == b;
 }

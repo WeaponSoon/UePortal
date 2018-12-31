@@ -56,6 +56,8 @@ public:
 	static FVector ProjectWorldToScreen(const FVector& worldPos, const FMatrix& projMatrix, bool bKeepZ = false);
 	static FBox GetSceneComponentScreenBox(const UCustomMeshComponent* sceneCom, const TArray<FCustomMeshTriangle>& triggles,USceneCaptureComponent2D* capture);
 
+	TSet<TWeakObjectPtr<USceneComponent>>& GetOverlapdThrougbleComp();
+
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
 		void InitPortalDoor(const USceneCaptureComponent2D* camera, const UCustomMeshComponent* model, const UMaterial* mat, bool isOpenSelfFirst);
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")

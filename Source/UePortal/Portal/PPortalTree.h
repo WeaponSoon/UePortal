@@ -36,6 +36,8 @@ private:
 		UTextureRenderTarget2D* anotherRT;
 	UPROPERTY()
 		UMaterialInterface* doorShowBack;
+	UPROPERTY()
+		class UPPortalComponent* outMot;
 
 	const static FName BACK_CAMERA_NAME;
 	const static FName BACK_CAMERA_MASK_PARA_NAME;
@@ -47,7 +49,7 @@ public:
 
 	UPPortalNode* QureyPortalNode(int32 layer);
 	void RecyclePortalNode(UPPortalNode* node);
-	void InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera, UMaterialInterface* back);
+	void InitPortalTree(const USceneCaptureComponent2D* root, AActor* motherActor, UCameraComponent* camera, UMaterialInterface* back, class UPPortalComponent* mot);
 	void BuildPortalTree();
 	void RenderPortalTree();
 private:

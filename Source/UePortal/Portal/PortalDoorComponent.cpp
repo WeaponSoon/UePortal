@@ -44,6 +44,7 @@ void UPortalDoorComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (bIsDoorOpen())
 	{
+		TestDynamicAddComponent();
 		//TODO find throughable components in portal range;
 	}
 	// ...
@@ -73,6 +74,7 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	if (doorCamera != nullptr)
 	{
 		doorCamera->bCaptureEveryFrame = false;
+		doorCamera->bCaptureOnMovement = false;
 	}
 
 	
@@ -225,35 +227,47 @@ void UPortalDoorComponent::OriginMaterial(const UMaterial * origin)
 
 void UPortalDoorComponent::TestDynamicAddComponent()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, "Dynamic Component Touched");
-	auto res = portalRange;
-	if (res != nullptr)
+	
+	if (portalRange != nullptr)
 	{
-		UBoxComponent* box = Cast<UBoxComponent>(res);
 		TSet<UPrimitiveComponent*> overlaped;
-		TSet<UPrimitiveComponent*> overlapedThroughable;
-		box->GetOverlappingComponents(overlaped);
+		TSet<TWeakObjectPtr<USceneComponent>> overlapedThroughable;
+		portalRange->GetOverlappingComponents(overlaped);
+		const auto& map = UThroughableComponent::GetThroughableMap();
 		for (auto& comp : overlaped)
 		{
 			//check if the comp is a throughable component, if so, add it to overlapedThroughable set
-			if (comp->GetOwner() != nullptr)
+			
+			if (map.Contains(comp) && map[comp].IsValid())
 			{
-				auto thrs = comp->GetOwner()->GetComponents();
-				for (auto& thr : thrs)
-				{
-					if (thr->GetClass()->Implements<UThroughable>())
-					{
-						if (Cast<IThroughable>(thr)->throughableComponent.IsValid() && Cast<IThroughable>(thr)->throughableComponent.Get() == comp)
-						{
-							overlapedThroughable.Add(comp);
-							break;
-						}
-					}
-				}
+				overlapedThroughable.Add(comp);
 			}
 		}
-		//TODO compair current overlaped throughable and the new one then update;
+		const auto& willAdds = overlapedThroughable.Difference(overlapedThroughableComp);
+		const auto& willDels = overlapedThroughableComp.Difference(overlapedThroughable);
+		for (auto& willAdd : willAdds)
+		{
+			if (map.Contains(willAdd) && map[willAdd].IsValid())
+			{
+				map[willAdd]->AddNearPortalDoor(this);
+			}
+		}
+		for (auto& willDel : willDels)
+		{
+			if (map.Contains(willDel) && map[willDel].IsValid())
+			{
+				map[willDel]->RemoveNearPortalDoor(this);
+			}
+		}
+		overlapedThroughableComp = overlapedThroughable;
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Dynamic Component Touched") + FString::FromInt(overlapedThroughableComp.Num()));
+		//TODO compair current overlaped throughable and the new one then update;	
 	}
+	//auto res = portalRange;
+	//if (res != nullptr)
+	//{
+	//	UBoxComponent* box = Cast<UBoxComponent>(res);
+	//}
 }
 
 void UPortalDoorComponent::BuildProjectionMatrix(FIntPoint RenderTargetSize, ECameraProjectionMode::Type ProjectionType, float FOV, float InOrthoWidth, FMatrix& ProjectionMatrix)
@@ -426,4 +440,10 @@ FBox UPortalDoorComponent::GetSceneComponentScreenBox(const UCustomMeshComponent
 		}
 	}
 	return FBox(FVector(xMin, yMin, zMin), FVector(xMax,yMax,zMax));
+}
+
+TSet<TWeakObjectPtr<USceneComponent>>& UPortalDoorComponent::GetOverlapdThrougbleComp()
+{
+	return overlapedThroughableComp;
+	// TODO: 在此处插入 return 语句
 }

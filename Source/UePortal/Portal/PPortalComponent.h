@@ -11,7 +11,7 @@
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class UEPORTAL_API UPPortalComponent : public UActorComponent, public IThroughable
+class UEPORTAL_API UPPortalComponent : public UThroughableComponent
 {
 	GENERATED_BODY()
 
@@ -29,11 +29,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Portal Component")
 		void SetPortalTree(const USceneCaptureComponent2D* capture, int32 maxLayer, class UCameraComponent* sceneCamera, class UMaterialInterface* backMat);
-
+	const static FName CAMERA_RANGE;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	virtual void OnSetThroughableComponent(class USceneComponent* oldOne, class USceneComponent* newOne) override;
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
