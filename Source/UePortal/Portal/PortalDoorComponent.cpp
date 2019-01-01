@@ -180,7 +180,7 @@ bool UPortalDoorComponent::bIsDoorOpen() const
 	
 }
 
-bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox lastBox) const
+bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox lastBox, bool bCareAngle) const
 {
 	
 	if (bIsDoorOpen())
@@ -192,7 +192,7 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 		FVector dir = doorShowSelf->GetComponentLocation() - capture->GetComponentLocation();
 		bool angleRe = FVector::DotProduct(dir, doorShowSelf->GetForwardVector()) <= 0;
 
-		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane && angleRe;
+		return myRect.Intersect(lastRect) && myBox.Max.Z > lastBox.Min.Z && myBox.Max.Z > GNearClippingPlane && (bCareAngle && (!bCareAngle || angleRe));
 	}
 	return false;
 }

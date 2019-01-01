@@ -108,10 +108,12 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* 
 		anotherRT->ClearColor = FLinearColor(0, 0, 0, 1);
 		anotherRT->UpdateResourceImmediate();
 	}
+	//anotherRT->TargetGamma = 1.7f;
 	anotherSc->TextureTarget = anotherRT;
 	anotherSc->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 	anotherSc->CompositeMode = ESceneCaptureCompositeMode::SCCM_Overwrite;
-	anotherSc->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+	
+	//anotherSc->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 	anotherSc->bCaptureOnMovement = false;
 	anotherSc->bCameraCutThisFrame = true;
 	if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
@@ -173,7 +175,7 @@ void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node, int layer)
 		bool isOther = false;
 		if (node->portalDoor != nullptr)
 			isOther = (node->portalDoor->GetOtherDoor() == nextPortalDoor);
-		if (!isOther && nextPortalDoor->ShouldRender(curCam, lastBox))
+		if (!isOther && nextPortalDoor->ShouldRender(curCam, lastBox))//, (outMot != nullptr) ? (outMot->passingPortal.Get() != nextPortalDoor) : true))
 		{
 			auto nextNode = QureyPortalNode(layer-1);
 			nextNode->portalDoor = nextPortalDoor;
@@ -278,13 +280,19 @@ void UPPortalTree::RenderPortalTreeInternal(UPPortalNode * node)
 			matInstDyn->SetTextureParameterValue(FName("_MainTex"), node->childrenNode[i]->renderTexture);
 			if (passing != nullptr && passing == node->childrenNode[i]->portalDoor)
 			{
-				if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0)
+				if (sceneCamera != nullptr && sceneCamera->PostProcessSettings.WeightedBlendables.Array.Num() > 0 && anotherSc != nullptr && anotherRT != nullptr)
 				{
+					anotherSc->bEnableClipPlane = true;
+					anotherSc->SetWorldLocation(node->childrenNode[i]->cameraTran.GetLocation());
+					anotherSc->SetWorldRotation(node->childrenNode[i]->cameraTran.GetRotation());
+					anotherSc->ClipPlaneBase = node->childrenNode[i]->clipPlanePos;
+					anotherSc->ClipPlaneNormal = node->childrenNode[i]->clipPlaneNormal;
+					anotherSc->CaptureScene();
 					UMaterialInterface* matInf = Cast<UMaterialInterface>(sceneCamera->PostProcessSettings.WeightedBlendables.Array[0].Object);
 					UMaterialInstanceDynamic* mat = Cast<UMaterialInstanceDynamic>(matInf);
 					if (mat != nullptr)
 					{
-						mat->SetTextureParameterValue(FName("PortalRender"), node->childrenNode[i]->renderTexture);
+						mat->SetTextureParameterValue(FName("PortalRender"), anotherRT);
 						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Touched ") + passing->GetName());
 					}
 				}

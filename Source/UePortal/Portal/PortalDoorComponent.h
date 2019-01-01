@@ -67,7 +67,7 @@ public:
 	UFUNCTION(BlueprintGetter, Category = "Portal Component")
 		bool bIsDoorOpen() const;
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
-		bool ShouldRender(USceneCaptureComponent2D* capture, FBox lastBox) const;
+		bool ShouldRender(USceneCaptureComponent2D* capture, FBox lastBox, bool bCareAngle=true) const;
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
 		void InstanceMaterial();
 	UFUNCTION(BlueprintGetter, Category = "Portal Component")
