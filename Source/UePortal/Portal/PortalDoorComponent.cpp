@@ -185,6 +185,10 @@ bool UPortalDoorComponent::ShouldRender(USceneCaptureComponent2D * capture, FBox
 	
 	if (bIsDoorOpen())
 	{
+		if (!bCareAngle)
+		{
+			return true;
+		}
 		FBox myBox = GetSceneComponentScreenBox(this->doorShowSelf, meshTriggles, capture);
 		FBox2D myRect(FVector2D(myBox.Min.X, myBox.Min.Y), FVector2D(myBox.Max.X, myBox.Max.Y));
 		FBox2D lastRect(FVector2D(lastBox.Min.X, lastBox.Min.Y), FVector2D(lastBox.Max.X, lastBox.Max.Y));

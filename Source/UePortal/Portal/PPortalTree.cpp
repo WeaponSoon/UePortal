@@ -104,7 +104,10 @@ void UPPortalTree::InitPortalTree(const USceneCaptureComponent2D* root, AActor* 
 		FIntPoint reslution = GEngine->GameViewport->Viewport->GetSizeXY();
 
 		anotherRT = NewObject<UTextureRenderTarget2D>();
+		anotherRT->RenderTargetFormat = ETextureRenderTargetFormat::RTF_RGBA8;
 		anotherRT->InitAutoFormat(reslution.X, reslution.Y);
+		
+		//anotherRT->InitAutoFormat()
 		anotherRT->ClearColor = FLinearColor(0, 0, 0, 1);
 		anotherRT->UpdateResourceImmediate();
 	}
@@ -175,7 +178,7 @@ void UPPortalTree::BuildPortalTreeInternal(UPPortalNode * node, int layer)
 		bool isOther = false;
 		if (node->portalDoor != nullptr)
 			isOther = (node->portalDoor->GetOtherDoor() == nextPortalDoor);
-		if (!isOther && nextPortalDoor->ShouldRender(curCam, lastBox))//, (outMot != nullptr) ? (outMot->passingPortal.Get() != nextPortalDoor) : true))
+		if (!isOther && nextPortalDoor->ShouldRender(curCam, lastBox, (outMot != nullptr) ? (outMot->passingPortal.Get() != nextPortalDoor) : true))
 		{
 			auto nextNode = QureyPortalNode(layer-1);
 			nextNode->portalDoor = nextPortalDoor;
