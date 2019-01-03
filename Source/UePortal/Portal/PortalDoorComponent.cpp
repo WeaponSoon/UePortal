@@ -75,6 +75,7 @@ void UPortalDoorComponent::InitPortalDoor(const USceneCaptureComponent2D * camer
 	{
 		doorCamera->bCaptureEveryFrame = false;
 		doorCamera->bCaptureOnMovement = false;
+		
 	}
 
 	
@@ -234,6 +235,7 @@ void UPortalDoorComponent::TestDynamicAddComponent()
 	
 	if (portalRange != nullptr)
 	{
+		portalRange->UpdateOverlaps();
 		TSet<UPrimitiveComponent*> overlaped;
 		TSet<TWeakObjectPtr<USceneComponent>> overlapedThroughable;
 		portalRange->GetOverlappingComponents(overlaped);

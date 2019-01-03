@@ -51,11 +51,13 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 	{
 		cameraCol = NewObject<USphereComponent>(GetOwner(), CAMERA_RANGE);
 		cameraCol->RegisterComponent();
+		
 	}
 	cameraCol->AttachToComponent(camera, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 	cameraCol->SetRelativeLocation(FVector::ZeroVector);
 	cameraCol->SetSphereRadius(radius);
-
+	//cameraCol->bDynamicObstacle = true;
+	//cameraCol->UpdateOverlaps();
 	SetThroughableComponent(cameraCol);
 	portalTree->InitPortalTree(rootCapture, GetOwner(), camera, backMat, this);
 	rootCapture->bCaptureEveryFrame = false;
