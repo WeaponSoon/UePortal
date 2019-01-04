@@ -21,6 +21,8 @@ UPPortalComponent::UPPortalComponent()
 
 void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, int32 maxLayer, UCameraComponent* camera, UMaterialInterface* backMat)
 {
+	PostPhysicsTickFunction.TickGroup = ETickingGroup::TG_PostPhysics;
+	PrePhysicsTickFunction.TickGroup = ETickingGroup::TG_PrePhysics;
 	if (portalTree != nullptr)
 	{
 		portalTree = nullptr;

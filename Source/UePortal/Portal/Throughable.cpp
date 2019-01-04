@@ -1,9 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Throughable.h"
-
+#include "Engine.h"
 // Add default functionality here for any IThroughable functions that are not pure virtual.
 TMap<TWeakObjectPtr<USceneComponent>, TWeakObjectPtr<UThroughableComponent>> UThroughableComponent::throughableMap;
+
+UThroughableComponent::UThroughableComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+	PostPhysicsTickFunction.bCanEverTick = true;
+	PostPhysicsTickFunction.TickGroup = TG_PostUpdateWork;
+	PrePhysicsTickFunction.bCanEverTick = true;
+	PrePhysicsTickFunction.TickGroup = TG_PrePhysics;
+}
 
 void UThroughableComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction * ThisTickFunction)
 {
@@ -158,8 +166,80 @@ void UThroughableComponent::BeginPlay()
 {
 }
 
+void UThroughableComponent::PostPhysics(float DeltaTime, ELevelTick TickType, ENamedThreads::Type CurrentThread, const FGraphEventRef & MyCompletionGraphEvent)
+{
+	
+}
+
+void UThroughableComponent::PrePhysics(float DeltaTime, ELevelTick TickType, ENamedThreads::Type CurrentThread, const FGraphEventRef & MyCompletionGraphEvent)
+{
+	
+}
+
 const TMap<TWeakObjectPtr<USceneComponent>, TWeakObjectPtr<UThroughableComponent>>& UThroughableComponent::GetThroughableMap()
 {
 	return throughableMap;
 	// TODO: 在此处插入 return 语句
+}
+
+void UThroughableComponent::RegisterComponentTickFunctions(bool bRegister)
+{
+	Super::RegisterComponentTickFunctions(bRegister);
+
+	if (bRegister)
+	{
+		if (SetupActorComponentTickFunction(&PostPhysicsTickFunction))
+		{
+			PostPhysicsTickFunction.Target = this;
+			PostPhysicsTickFunction.AddPrerequisite(this, this->PrimaryComponentTick);
+		}
+	}
+	else
+	{
+		if (PostPhysicsTickFunction.IsTickFunctionRegistered())
+		{
+			PostPhysicsTickFunction.UnRegisterTickFunction();
+		}
+	}
+	if (bRegister)
+	{
+		if (SetupActorComponentTickFunction(&PrePhysicsTickFunction))
+		{
+			PrePhysicsTickFunction.Target = this;
+			//PostPhysicsTickFunction.AddPrerequisite(this, this->PrimaryComponentTick);
+		}
+	}
+	else
+	{
+		if (PrePhysicsTickFunction.IsTickFunctionRegistered())
+		{
+			PrePhysicsTickFunction.UnRegisterTickFunction();
+		}
+	}
+}
+
+void FThroughablePrePhysicsTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType, ENamedThreads::Type CurrentThread, const FGraphEventRef & MyCompletionGraphEvent)
+{
+	FActorComponentTickFunction::ExecuteTickHelper(Target, /*bTickInEditor=*/ false, DeltaTime, TickType, [this, &DeltaTime, &TickType, &CurrentThread, &MyCompletionGraphEvent](float DilatedTime)
+	{
+		Target->PrePhysics(DeltaTime, TickType, CurrentThread, MyCompletionGraphEvent);
+	});
+}
+
+FString FThroughablePrePhysicsTickFunction::DiagnosticMessage()
+{
+	return Target->GetFullName() + TEXT("[UThroughableComponent::PrePhysicsTick]");
+}
+
+void FThroughablePostPhysicsTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType, ENamedThreads::Type CurrentThread, const FGraphEventRef & MyCompletionGraphEvent)
+{
+	FActorComponentTickFunction::ExecuteTickHelper(Target, /*bTickInEditor=*/ false, DeltaTime, TickType, [this, &DeltaTime, &TickType, &CurrentThread, &MyCompletionGraphEvent](float DilatedTime)
+	{
+		Target->PostPhysics(DeltaTime, TickType, CurrentThread, MyCompletionGraphEvent);
+	});
+}
+
+FString FThroughablePostPhysicsTickFunction::DiagnosticMessage()
+{
+	return Target->GetFullName() + TEXT("[UThroughableComponent::PostPhysicsTick]");
 }
