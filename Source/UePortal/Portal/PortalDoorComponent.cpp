@@ -266,7 +266,7 @@ void UPortalDoorComponent::TestDynamicAddComponent()
 			}
 		}
 		overlapedThroughableComp = overlapedThroughable;
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Dynamic Component Touched") + FString::FromInt(overlapedThroughableComp.Num()));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Dynamic Component Touched") + FString::FromInt(overlapedThroughableComp.Num()));
 		//TODO compair current overlaped throughable and the new one then update;	
 	}
 	//auto res = portalRange;

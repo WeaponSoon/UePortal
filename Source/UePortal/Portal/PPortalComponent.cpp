@@ -98,7 +98,7 @@ void UPPortalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	APawn* ownerPawn = Cast<APawn>(GetOwner());
 	if (ownerPawn!= nullptr && ownerPawn->IsLocallyControlled() && portalTree != nullptr && rootCapture != nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Dynamic ") + FString::FromInt(nearPortals.Num()));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("Dynamic ") + FString::FromInt(nearPortals.Num()));
 		portalTree->BuildPortalTree();
 		portalTree->RenderPortalTree();
 	}

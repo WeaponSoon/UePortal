@@ -21,4 +21,6 @@ public:
 		static float GlobalClipPlane();
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Portal Component|Test")
 		static bool IsTwoWeakPointEqual(UObject* a, UObject* b);
+	UFUNCTION(BlueprintCallable, Category = "Portal Component|Change PhysicsScene")
+		static void ChangePhysicsScene();
 };
