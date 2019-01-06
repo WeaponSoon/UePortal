@@ -15,6 +15,21 @@ class UEPORTAL_API UPortalBlueprintCommonFunctions : public UBlueprintFunctionLi
 	GENERATED_BODY()
 	
 public:
+	struct IgnorePair
+	{
+		TWeakObjectPtr<USceneComponent> obj1;
+		TWeakObjectPtr<USceneComponent> obj2;
+	};
+private:
+	
+	static TArray<IgnorePair> ignoreComponents;
+public:
+	static const TArray<IgnorePair>& GetIgnoreComponents();
+
+	UFUNCTION(BlueprintCallable, Category = "Portal Component")
+		static bool IgnoreBetween(USceneComponent* a, USceneComponent* b);
+	UFUNCTION(BlueprintCallable, Category = "Portal Component")
+		static bool RemoveIgnoreBetween(USceneComponent* a, USceneComponent* b);
 	UFUNCTION(BlueprintCallable, Category = "Portal Component")
 		static int GetNowPortalNum();
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Portal Component")
@@ -23,4 +38,5 @@ public:
 		static bool IsTwoWeakPointEqual(UObject* a, UObject* b);
 	UFUNCTION(BlueprintCallable, Category = "Portal Component|Change PhysicsScene")
 		static void ChangePhysicsScene();
+	
 };

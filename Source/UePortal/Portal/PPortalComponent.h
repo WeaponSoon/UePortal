@@ -30,6 +30,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Portal Component")
 		void SetPortalTree(const USceneCaptureComponent2D* capture, int32 maxLayer, class UCameraComponent* sceneCamera, class UMaterialInterface* backMat);
 	const static FName CAMERA_RANGE;
+	static class UWorld* currentWorld;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

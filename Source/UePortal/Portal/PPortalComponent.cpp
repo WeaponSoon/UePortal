@@ -6,6 +6,7 @@
 #include "Engine.h"
 
 const FName UPPortalComponent::CAMERA_RANGE("CameraRange");
+UWorld* UPPortalComponent::currentWorld = nullptr;
 // Sets default values for this component's properties
 UPPortalComponent::UPPortalComponent()
 {
@@ -70,7 +71,7 @@ void UPPortalComponent::SetPortalTree(const USceneCaptureComponent2D * capture, 
 void UPPortalComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	currentWorld = GetWorld();
 	/*if (ownerPawn != nullptr && portalTree != nullptr && rootCapture != nullptr)
 	{
 			
