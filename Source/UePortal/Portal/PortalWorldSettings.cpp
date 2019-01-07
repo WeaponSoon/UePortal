@@ -29,7 +29,8 @@ bool APortalWorldSettings::IgnoreBetween(USceneComponent* a, USceneComponent* b)
 	recoveryPair.Empty();
 	for (int32 i = 0; i < ignoreComponents.Num(); ++i)
 	{
-		if (ignoreComponents[i].obj1.Get() == a && ignoreComponents[i].obj2.Get() == b)
+		if ((ignoreComponents[i].obj1.Get() == a && ignoreComponents[i].obj2.Get() == b) ||
+			(ignoreComponents[i].obj2.Get() == a && ignoreComponents[i].obj1.Get() == b))
 		{
 			recoveryPair.Add(i);
 		}
@@ -55,7 +56,8 @@ bool APortalWorldSettings::RemoveIgnoreBetween(USceneComponent * a, USceneCompon
 	TArray<int32> willDels;
 	for (int32 i = 0; i < ignoreComponents.Num(); ++i)
 	{
-		if (ignoreComponents[i].obj1.Get() == a && ignoreComponents[i].obj2.Get() == b)
+		if ((ignoreComponents[i].obj1.Get() == a && ignoreComponents[i].obj2.Get() == b) ||
+			(ignoreComponents[i].obj2.Get() == a && ignoreComponents[i].obj1.Get() == b))
 		{
 			willDels.Add(i);
 		}
@@ -74,14 +76,14 @@ static PxFilterFlags PhysXSimFilterShaderPortal(PxFilterObjectAttributes attribu
 	PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
 {
 	//UE_LOG(LogPhysics, Log, TEXT("filterData0 (%s): %x %x %x %x"), *ObjTypeToString(attributes0), filterData0.word0, filterData0.word1, filterData0.word2, filterData0.word3);
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "New Phyics Scene");
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, "New Phyics Scene");
 
 
 
 	APortalWorldSettings* settings = nullptr;
 	if (UPPortalComponent::currentWorld && UPPortalComponent::currentWorld->GetWorldSettings())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, UPPortalComponent::currentWorld->GetWorldSettings()->GetClass()->GetName());
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, UPPortalComponent::currentWorld->GetWorldSettings()->GetClass()->GetName());
 		settings = Cast<APortalWorldSettings>(UPPortalComponent::currentWorld->GetWorldSettings());
 	}
 	if (settings != nullptr)
@@ -96,7 +98,7 @@ static PxFilterFlags PhysXSimFilterShaderPortal(PxFilterObjectAttributes attribu
 				if ((pair.obj1->GetUniqueID() == filterData0.word2 && pair.obj2->GetUniqueID() == filterData1.word2) ||
 					(pair.obj2->GetUniqueID() == filterData0.word2 && pair.obj1->GetUniqueID() == filterData1.word2))
 				{
-					return PxFilterFlag::eKILL;
+					return PxFilterFlag::eSUPPRESS;
 				}
 			}
 		}
